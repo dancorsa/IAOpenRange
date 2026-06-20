@@ -17,6 +17,7 @@ namespace NinjaTrader.NinjaScript.Strategies
     /// </summary>
     public class ORBTradeRecord
     {
+        // --- Campos originales (columnas 0-15) ---
         public DateTime Date               { get; set; }
         public string   Direction          { get; set; }  // "LONG" o "SHORT"
         public double   AiConfidenceAtEntry{ get; set; }
@@ -33,6 +34,32 @@ namespace NinjaTrader.NinjaScript.Strategies
         public double   MaxAdverseTicks    { get; set; }
         public string   DailyRegime        { get; set; }
         public double   RegimeConviction   { get; set; }
+
+        // --- Campos extendidos (columnas 16-39) ---
+        public double   EntryPrice           { get; set; }
+        public double   ExitPrice            { get; set; }
+        public int      Contracts            { get; set; }
+        public double   PnlUsd              { get; set; }
+        public double   PnlTicks            { get; set; }
+        public double   StopTicks           { get; set; }
+        public bool     Tp1Hit              { get; set; }
+        public bool     Tp2Hit              { get; set; }
+        public bool     Tp3Hit              { get; set; }
+        public string   DayBias             { get; set; }
+        public double   RsiM5AtEntry        { get; set; }
+        public double   MacdHistAtEntry     { get; set; }
+        public int      ClearanceTicks      { get; set; }
+        public int      BarsSinceBreakout   { get; set; }
+        public bool     WasReEntry          { get; set; }
+        public double   AiRiskAdjustment    { get; set; }
+        public string   AiReason            { get; set; }
+        public bool     RiskGuardTriggered  { get; set; }
+        public string   RiskGuardAction     { get; set; }
+        public double   ConfCalibrationError{ get; set; }
+        public string   PostTradeLesson     { get; set; }
+        public int      ConsecLossesAtEntry { get; set; }
+        public double   SessionMinConf      { get; set; }
+        public string   PatternsFailing     { get; set; }
     }
 
     /// <summary>
@@ -60,11 +87,15 @@ namespace NinjaTrader.NinjaScript.Strategies
         private readonly Action<string>    _log;
         private readonly object            _lock = new object();
 
-        // Cabecera CSV
+        // Cabecera CSV (columnas 0-15 originales + 16-39 extendidas)
         private const string CSV_HEADER =
             "Date,Direction,AiConfidence,AiFakeoutProb,Result,RMultiple,ExitReason," +
             "DayOfWeek,GapDirection,VolumeRatio,OrbRangeTicks,PatternTag," +
-            "MaxFavorableTicks,MaxAdverseTicks,DailyRegime,RegimeConviction";
+            "MaxFavorableTicks,MaxAdverseTicks,DailyRegime,RegimeConviction," +
+            "EntryPrice,ExitPrice,Contracts,PnlUsd,PnlTicks,StopTicks," +
+            "Tp1Hit,Tp2Hit,Tp3Hit,DayBias,RsiM5,MacdHist,ClearanceTicks,BarsSinceBreakout," +
+            "WasReEntry,AiRiskAdj,AiReason,RiskGuardTriggered,RiskGuardAction," +
+            "ConfCalibError,PostTradeLesson,ConsecLossesAtEntry,SessionMinConf,PatternsFailing";
 
         #endregion
 
@@ -236,6 +267,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                         sw.WriteLine(CSV_HEADER);
 
                     sw.WriteLine(string.Join(",",
+                        // columnas 0-15
                         EscapeCsv(t.Date.ToString("yyyy-MM-dd HH:mm:ss")),
                         EscapeCsv(t.Direction),
                         t.AiConfidenceAtEntry.ToString("F4"),
@@ -251,7 +283,32 @@ namespace NinjaTrader.NinjaScript.Strategies
                         t.MaxFavorableTicks.ToString("F1"),
                         t.MaxAdverseTicks.ToString("F1"),
                         EscapeCsv(t.DailyRegime ?? ""),
-                        t.RegimeConviction.ToString("F4")
+                        t.RegimeConviction.ToString("F4"),
+                        // columnas 16-39
+                        t.EntryPrice.ToString("F4"),
+                        t.ExitPrice.ToString("F4"),
+                        t.Contracts.ToString(),
+                        t.PnlUsd.ToString("F2"),
+                        t.PnlTicks.ToString("F2"),
+                        t.StopTicks.ToString("F2"),
+                        t.Tp1Hit ? "1" : "0",
+                        t.Tp2Hit ? "1" : "0",
+                        t.Tp3Hit ? "1" : "0",
+                        EscapeCsv(t.DayBias ?? ""),
+                        t.RsiM5AtEntry.ToString("F2"),
+                        t.MacdHistAtEntry.ToString("F6"),
+                        t.ClearanceTicks.ToString(),
+                        t.BarsSinceBreakout.ToString(),
+                        t.WasReEntry ? "1" : "0",
+                        t.AiRiskAdjustment.ToString("F4"),
+                        EscapeCsv(t.AiReason ?? ""),
+                        t.RiskGuardTriggered ? "1" : "0",
+                        EscapeCsv(t.RiskGuardAction ?? ""),
+                        t.ConfCalibrationError.ToString("F4"),
+                        EscapeCsv(t.PostTradeLesson ?? ""),
+                        t.ConsecLossesAtEntry.ToString(),
+                        t.SessionMinConf.ToString("F4"),
+                        EscapeCsv(t.PatternsFailing ?? "")
                     ));
                 }
             }
@@ -270,7 +327,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 var cols = SplitCsvLine(line);
                 if (cols.Length < 16) return null;
 
-                return new ORBTradeRecord
+                var r = new ORBTradeRecord
                 {
                     Date                = DateTime.Parse(cols[0]),
                     Direction           = cols[1],
@@ -289,6 +346,34 @@ namespace NinjaTrader.NinjaScript.Strategies
                     DailyRegime         = cols[14],
                     RegimeConviction    = ParseDouble(cols[15])
                 };
+
+                // columnas extendidas (archivos anteriores pueden no tenerlas)
+                if (cols.Length > 16) r.EntryPrice           = ParseDouble(cols[16]);
+                if (cols.Length > 17) r.ExitPrice            = ParseDouble(cols[17]);
+                if (cols.Length > 18) r.Contracts            = (int)ParseDouble(cols[18]);
+                if (cols.Length > 19) r.PnlUsd               = ParseDouble(cols[19]);
+                if (cols.Length > 20) r.PnlTicks             = ParseDouble(cols[20]);
+                if (cols.Length > 21) r.StopTicks            = ParseDouble(cols[21]);
+                if (cols.Length > 22) r.Tp1Hit               = cols[22] == "1";
+                if (cols.Length > 23) r.Tp2Hit               = cols[23] == "1";
+                if (cols.Length > 24) r.Tp3Hit               = cols[24] == "1";
+                if (cols.Length > 25) r.DayBias              = cols[25];
+                if (cols.Length > 26) r.RsiM5AtEntry         = ParseDouble(cols[26]);
+                if (cols.Length > 27) r.MacdHistAtEntry       = ParseDouble(cols[27]);
+                if (cols.Length > 28) r.ClearanceTicks        = (int)ParseDouble(cols[28]);
+                if (cols.Length > 29) r.BarsSinceBreakout     = (int)ParseDouble(cols[29]);
+                if (cols.Length > 30) r.WasReEntry            = cols[30] == "1";
+                if (cols.Length > 31) r.AiRiskAdjustment      = ParseDouble(cols[31]);
+                if (cols.Length > 32) r.AiReason              = cols[32];
+                if (cols.Length > 33) r.RiskGuardTriggered    = cols[33] == "1";
+                if (cols.Length > 34) r.RiskGuardAction       = cols[34];
+                if (cols.Length > 35) r.ConfCalibrationError  = ParseDouble(cols[35]);
+                if (cols.Length > 36) r.PostTradeLesson       = cols[36];
+                if (cols.Length > 37) r.ConsecLossesAtEntry   = (int)ParseDouble(cols[37]);
+                if (cols.Length > 38) r.SessionMinConf        = ParseDouble(cols[38]);
+                if (cols.Length > 39) r.PatternsFailing       = cols[39];
+
+                return r;
             }
             catch
             {

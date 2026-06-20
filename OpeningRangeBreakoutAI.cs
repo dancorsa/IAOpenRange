@@ -264,15 +264,29 @@ namespace NinjaTrader.NinjaScript.Strategies
         private ORBSignalPayload  _activeEntryPayload;
         private bool              _tp1Hit = false;
         private bool              _tp2Hit = false;
+        private bool              _tp3Hit = false;
         private bool              _inReEntry = false;
         private int               _reEntryWaitCounter = 0;
         private double            _maxFavorableExcursion = 0;
         private double            _maxAdverseExcursion   = 0;
         private int               _barsHeld              = 0;
         private int               _entryBar              = -1;
+        private double            _entryPrice            = 0;
+        private int               _entryContracts        = 0;
+
+        // Snapshot completo al momento de la entrada
+        private double _entryAiConfidence   = 0;
+        private double _entryAiFakeoutProb  = 0;
+        private double _entryAiRiskAdj      = 1.0;
+        private string _entryAiReason       = "";
+        private double _entryRsiM5          = 0;
+        private double _entryMacdHist       = 0;
+        private int    _entryBarsSinceBO    = 0;
 
         // Guardia de riesgo (Capa 4)
-        private int  _lastRiskGuardBar = -1;
+        private int    _lastRiskGuardBar    = -1;
+        private bool   _riskGuardTriggered  = false;
+        private string _riskGuardLastAction = "";
 
         // Seguimiento de volumen promedio (aproximaciÃ³n 30 dÃ­as)
         private double _avgDailyVolume = 0;
@@ -449,10 +463,22 @@ namespace NinjaTrader.NinjaScript.Strategies
             _dailyTradingEnabled = true;
             _tp1Hit              = false;
             _tp2Hit              = false;
+            _tp3Hit              = false;
             _inReEntry           = false;
             _reEntryWaitCounter  = 0;
             _activeTradeParams   = null;
             _activeEntryPayload  = null;
+            _entryAiConfidence   = 0;
+            _entryAiFakeoutProb  = 0;
+            _entryAiRiskAdj      = 1.0;
+            _entryAiReason       = "";
+            _entryRsiM5          = 0;
+            _entryMacdHist       = 0;
+            _entryBarsSinceBO    = 0;
+            _riskGuardTriggered  = false;
+            _riskGuardLastAction = "";
+            _entryPrice          = 0;
+            _entryContracts      = 0;
             _regimeResult        = new RegimeAnalysis { FavorableForOrb = true, MaxRiskToday = 1.0 };
             _learningResult      = new LearningAdjustment { AdjustedMinConfidence = AIMinConfidence };
             _sessionMinConfidence= AIMinConfidence;
@@ -761,14 +787,27 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
 
             // Registrar entrada
-            _activeTradeParams  = tradeParams;
-            _activeEntryPayload = payload;
-            _tp1Hit             = false;
-            _tp2Hit             = false;
-            _entryBar           = CurrentBar;
-            _barsHeld           = 0;
+            _activeTradeParams   = tradeParams;
+            _activeEntryPayload  = payload;
+            _tp1Hit              = false;
+            _tp2Hit              = false;
+            _tp3Hit              = false;
+            _entryBar            = CurrentBar;
+            _barsHeld            = 0;
             _maxFavorableExcursion = 0;
             _maxAdverseExcursion   = 0;
+            _entryPrice          = Close[0];
+            _entryContracts      = tradeParams.Contracts;
+            _entryAiConfidence   = validation.Confidence;
+            _entryAiFakeoutProb  = validation.FakeoutProbability;
+            _entryAiRiskAdj      = validation.RiskAdjustment;
+            _entryAiReason       = validation.Reason ?? "";
+            _entryRsiM5          = CurrentBars[1] > 0 ? _rsiM5.Value[0] : 0;
+            _entryMacdHist       = CurrentBars[1] > 0 ? _macdM5.Diff[0] : 0;
+            int boBar            = isLong ? _orbCalc.LongBreakoutBar : _orbCalc.ShortBreakoutBar;
+            _entryBarsSinceBO    = CurrentBar - boBar;
+            _riskGuardTriggered  = false;
+            _riskGuardLastAction = "";
 
             // Enviar Ã³rdenes a NinjaTrader
             if (isLong)
@@ -910,10 +949,13 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             if (!action.IsValid) return;
 
-            if (action.Action == "close_immediately")
+            _riskGuardTriggered  = true;
+            _riskGuardLastAction = action.Action ?? “”;
+
+            if (action.Action == “close_immediately”)
             {
-                Print($"[Capa4] CIERRE DE EMERGENCIA â€” {action.Reasoning}");
-                ExitPosition(isLong, "RiskGuard_Emergency");
+                Print($”[Capa4] CIERRE DE EMERGENCIA â€” {action.Reasoning}”);
+                ExitPosition(isLong, “RiskGuard_Emergency”);
             }
             else if (action.Action == "tighten_stop" && action.NewStopDistanceTicks.HasValue)
             {
@@ -977,11 +1019,17 @@ namespace NinjaTrader.NinjaScript.Strategies
                 // Guardar en journal y disparar Capa 5
                 if (_activeEntryPayload != null)
                 {
+                    double tickVal  = Instrument.MasterInstrument.PointValue * TickSize;
+                    double pnlTicks = tickVal > 0 ? pnlUsd / tickVal : 0;
+                    double exitPx   = execution.Price;
+                    string patsFail = _learningResult?.PatternsFailing != null
+                        ? string.Join("|", _learningResult.PatternsFailing) : "";
+
                     var closedPayload = new ClosedTradePayload
                     {
                         EntryConditions       = _activeEntryPayload,
-                        AiConfidenceAtEntry   = _activeEntryPayload != null ? 0.70 : 0,
-                        AiFakeoutProbability  = 0.30,
+                        AiConfidenceAtEntry   = _entryAiConfidence,
+                        AiFakeoutProbability  = _entryAiFakeoutProb,
                         ActualResult          = result,
                         ActualRMultiple       = rMultiple,
                         ExitReason            = exitReason,
@@ -992,31 +1040,75 @@ namespace NinjaTrader.NinjaScript.Strategies
 
                     if (EnablePostTradeAnalysis && _aiOrch != null && State != State.Historical)
                     {
+                        // Capturar snapshot antes del Task.Run (campos mutables)
+                        double snapEntry   = _entryPrice;
+                        int    snapContr   = _entryContracts;
+                        double snapStop    = _activeTradeParams?.StopDistance ?? 0;
+                        bool   snapTp1    = _tp1Hit;
+                        bool   snapTp2    = _tp2Hit;
+                        bool   snapTp3    = _tp3Hit;
+                        string snapBias   = _contextFilter.DayBias.ToString();
+                        double snapRsi    = _entryRsiM5;
+                        double snapMacd   = _entryMacdHist;
+                        int    snapBsBO   = _entryBarsSinceBO;
+                        bool   snapReEntr = _inReEntry;
+                        double snapAiRAdj = _entryAiRiskAdj;
+                        string snapAiReas = _entryAiReason;
+                        bool   snapRG     = _riskGuardTriggered;
+                        string snapRGAct  = _riskGuardLastAction;
+                        int    snapCLoss  = _riskMgr.ConsecutiveLosses;
+                        double snapSessC  = _sessionMinConfidence;
+                        string snapPFail  = patsFail;
+                        int    snapClear  = (int)(_activeEntryPayload?.ClearanceTicks ?? 0);
+
                         _ = Task.Run(async () =>
                         {
                             try
                             {
                                 var analysis = await _aiOrch.AnalyzeClosedTradeAsync(closedPayload);
-                                var record = new ORBTradeRecord
+                                _journal.AddTrade(new ORBTradeRecord
                                 {
-                                    Date                = time,
-                                    Direction           = _activeEntryPayload?.SignalDirection ?? "LONG",
-                                    AiConfidenceAtEntry = closedPayload.AiConfidenceAtEntry,
-                                    AiFakeoutProb       = closedPayload.AiFakeoutProbability,
-                                    Result              = result,
-                                    RMultiple           = rMultiple,
-                                    ExitReason          = exitReason,
-                                    DayOfWeek           = time.DayOfWeek.ToString(),
-                                    GapDirection        = _contextFilter.GapDirection,
-                                    VolumeRatio         = _contextFilter.VolumeRatio,
-                                    OrbRangeTicks       = _orbCalc.ORB_Range,
-                                    PatternTag          = analysis.PatternTag,
-                                    MaxFavorableTicks   = _maxFavorableExcursion,
-                                    MaxAdverseTicks     = _maxAdverseExcursion,
-                                    DailyRegime         = _regimeResult?.Regime ?? "",
-                                    RegimeConviction    = _regimeResult?.Conviction ?? 0
-                                };
-                                _journal.AddTrade(record);
+                                    Date                 = time,
+                                    Direction            = _activeEntryPayload?.SignalDirection ?? "LONG",
+                                    AiConfidenceAtEntry  = _entryAiConfidence,
+                                    AiFakeoutProb        = _entryAiFakeoutProb,
+                                    Result               = result,
+                                    RMultiple            = rMultiple,
+                                    ExitReason           = exitReason,
+                                    DayOfWeek            = time.DayOfWeek.ToString(),
+                                    GapDirection         = _contextFilter.GapDirection,
+                                    VolumeRatio          = _contextFilter.VolumeRatio,
+                                    OrbRangeTicks        = _orbCalc.ORB_Range,
+                                    PatternTag           = analysis.PatternTag,
+                                    MaxFavorableTicks    = _maxFavorableExcursion,
+                                    MaxAdverseTicks      = _maxAdverseExcursion,
+                                    DailyRegime          = _regimeResult?.Regime ?? "",
+                                    RegimeConviction     = _regimeResult?.Conviction ?? 0,
+                                    EntryPrice           = snapEntry,
+                                    ExitPrice            = exitPx,
+                                    Contracts            = snapContr,
+                                    PnlUsd               = pnlUsd,
+                                    PnlTicks             = pnlTicks,
+                                    StopTicks            = snapStop,
+                                    Tp1Hit               = snapTp1,
+                                    Tp2Hit               = snapTp2,
+                                    Tp3Hit               = snapTp3,
+                                    DayBias              = snapBias,
+                                    RsiM5AtEntry         = snapRsi,
+                                    MacdHistAtEntry      = snapMacd,
+                                    ClearanceTicks       = snapClear,
+                                    BarsSinceBreakout    = snapBsBO,
+                                    WasReEntry           = snapReEntr,
+                                    AiRiskAdjustment     = snapAiRAdj,
+                                    AiReason             = snapAiReas,
+                                    RiskGuardTriggered   = snapRG,
+                                    RiskGuardAction      = snapRGAct,
+                                    ConfCalibrationError = analysis.ConfidenceCalibrationError,
+                                    PostTradeLesson      = analysis.Lesson ?? "",
+                                    ConsecLossesAtEntry  = snapCLoss,
+                                    SessionMinConf       = snapSessC,
+                                    PatternsFailing      = snapPFail
+                                });
                             }
                             catch (Exception ex)
                             {
@@ -1026,20 +1118,44 @@ namespace NinjaTrader.NinjaScript.Strategies
                     }
                     else
                     {
-                        // Sin IA: guardar el registro directamente
+                        // Sin IA post-trade: guardar el registro directamente
                         _journal.AddTrade(new ORBTradeRecord
                         {
-                            Date             = time,
-                            Direction        = _activeEntryPayload?.SignalDirection ?? "LONG",
-                            Result           = result,
-                            RMultiple        = rMultiple,
-                            ExitReason       = exitReason,
-                            DayOfWeek        = time.DayOfWeek.ToString(),
-                            GapDirection     = _contextFilter.GapDirection,
-                            VolumeRatio      = _contextFilter.VolumeRatio,
-                            OrbRangeTicks    = _orbCalc.ORB_Range,
-                            DailyRegime      = _regimeResult?.Regime ?? "",
-                            RegimeConviction = _regimeResult?.Conviction ?? 0
+                            Date                 = time,
+                            Direction            = _activeEntryPayload?.SignalDirection ?? "LONG",
+                            AiConfidenceAtEntry  = _entryAiConfidence,
+                            AiFakeoutProb        = _entryAiFakeoutProb,
+                            Result               = result,
+                            RMultiple            = rMultiple,
+                            ExitReason           = exitReason,
+                            DayOfWeek            = time.DayOfWeek.ToString(),
+                            GapDirection         = _contextFilter.GapDirection,
+                            VolumeRatio          = _contextFilter.VolumeRatio,
+                            OrbRangeTicks        = _orbCalc.ORB_Range,
+                            DailyRegime          = _regimeResult?.Regime ?? "",
+                            RegimeConviction     = _regimeResult?.Conviction ?? 0,
+                            EntryPrice           = _entryPrice,
+                            ExitPrice            = exitPx,
+                            Contracts            = _entryContracts,
+                            PnlUsd               = pnlUsd,
+                            PnlTicks             = pnlTicks,
+                            StopTicks            = _activeTradeParams?.StopDistance ?? 0,
+                            Tp1Hit               = _tp1Hit,
+                            Tp2Hit               = _tp2Hit,
+                            Tp3Hit               = _tp3Hit,
+                            DayBias              = _contextFilter.DayBias.ToString(),
+                            RsiM5AtEntry         = _entryRsiM5,
+                            MacdHistAtEntry      = _entryMacdHist,
+                            ClearanceTicks       = (int)(_activeEntryPayload?.ClearanceTicks ?? 0),
+                            BarsSinceBreakout    = _entryBarsSinceBO,
+                            WasReEntry           = _inReEntry,
+                            AiRiskAdjustment     = _entryAiRiskAdj,
+                            AiReason             = _entryAiReason,
+                            RiskGuardTriggered   = _riskGuardTriggered,
+                            RiskGuardAction      = _riskGuardLastAction,
+                            ConsecLossesAtEntry  = _riskMgr.ConsecutiveLosses,
+                            SessionMinConf       = _sessionMinConfidence,
+                            PatternsFailing      = patsFail
                         });
                     }
                 }
@@ -1049,6 +1165,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 _activeEntryPayload = null;
                 _tp1Hit             = false;
                 _tp2Hit             = false;
+                _tp3Hit             = false;
                 _panelNeedsUpdate   = true;
             }
 
@@ -1063,6 +1180,11 @@ namespace NinjaTrader.NinjaScript.Strategies
             {
                 _tp2Hit = true;
                 Print("[TP2] Alcanzado.");
+            }
+            if (execution.Name?.Contains("T3") == true)
+            {
+                _tp3Hit = true;
+                Print("[TP3] Alcanzado.");
             }
         }
 
