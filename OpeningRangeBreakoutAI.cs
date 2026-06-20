@@ -266,7 +266,8 @@ namespace NinjaTrader.NinjaScript.Strategies
         private bool              _tp2Hit = false;
         private bool              _tp3Hit = false;
         private bool              _inReEntry = false;
-        private int               _reEntryWaitCounter = 0;
+        private int               _reEntryWaitCounter  = 0;
+        private int               _reEntryStartBarM5   = -1;
         private double            _maxFavorableExcursion = 0;
         private double            _maxAdverseExcursion   = 0;
         private int               _barsHeld              = 0;
@@ -500,6 +501,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             _tp3Hit              = false;
             _inReEntry           = false;
             _reEntryWaitCounter  = 0;
+            _reEntryStartBarM5   = -1;
             _activeTradeParams   = null;
             _activeEntryPayload  = null;
             _entryAiConfidence   = 0;
@@ -706,10 +708,16 @@ namespace NinjaTrader.NinjaScript.Strategies
                 return;
             }
 
-            bool tryLong  = _orbCalc.HasLongSignal  && !_orbCalc.LongFakeout
-                         && (CurrentBar - _orbCalc.LongBreakoutBar) <= MaxBarsAfterBreakout;
-            bool tryShort = _orbCalc.HasShortSignal && !_orbCalc.ShortFakeout
-                         && (CurrentBar - _orbCalc.ShortBreakoutBar) <= MaxBarsAfterBreakout;
+            // Re-entry: after a fakeout/stop, wait ReEntryWaitBars M5 bars then allow one retry
+            bool reEntryReady = AllowReEntry && _inReEntry && _reEntryStartBarM5 >= 0
+                             && (CurrentBars[1] - _reEntryStartBarM5) >= ReEntryWaitBars;
+
+            bool tryLong  = _orbCalc.HasLongSignal
+                         && (!_orbCalc.LongFakeout  || reEntryReady)
+                         && (CurrentBar - _orbCalc.LongBreakoutBar  <= MaxBarsAfterBreakout || reEntryReady);
+            bool tryShort = _orbCalc.HasShortSignal
+                         && (!_orbCalc.ShortFakeout || reEntryReady)
+                         && (CurrentBar - _orbCalc.ShortBreakoutBar <= MaxBarsAfterBreakout || reEntryReady);
 
             // Sin reversal: la primera se al detectada bloquea la direccion contraria
             if (!AllowReversalTrade)
@@ -821,6 +829,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
 
             // Registrar entrada
+            _cumProfitAtEntry    = GetCumProfit();  // bug fix: capturar profit antes de entrar
             _activeTradeParams   = tradeParams;
             _activeEntryPayload  = payload;
             _tp1Hit              = false;
@@ -1053,6 +1062,22 @@ namespace NinjaTrader.NinjaScript.Strategies
                 string result = pnlUsd >= 0 ? "win" : "loss";
 
                 _riskMgr.RecordTradeResult(pnlUsd);
+
+                // Re-entry: activar si fue stop/fakeout y no ya estabamos en re-entrada
+                if (AllowReEntry && !_inReEntry
+                    && (exitReason == "stop_loss" || exitReason == "range_return"))
+                {
+                    _inReEntry         = true;
+                    _reEntryStartBarM5 = CurrentBars[1];
+                    _reEntryWaitCounter= 0;
+                    Print("[ReEntry] Stop/fakeout - esperando " + ReEntryWaitBars + " barras M5.");
+                }
+                else
+                {
+                    _inReEntry          = false;
+                    _reEntryStartBarM5  = -1;
+                    _reEntryWaitCounter = 0;
+                }
 
                 // Guardar en journal y disparar Capa 5
                 if (_activeEntryPayload != null)
