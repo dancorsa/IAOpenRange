@@ -328,7 +328,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         private readonly ORBAIProvider       _provider;
         private readonly string           _apiKey;
         private readonly string           _modelOverride;
-        private readonly TimeSpan         _timeout = TimeSpan.FromSeconds(8);
+        private readonly TimeSpan         _timeout;
 
         // URLs de los proveedores
         private const string CLAUDE_URL = "https://api.anthropic.com/v1/messages";
@@ -352,12 +352,13 @@ namespace NinjaTrader.NinjaScript.Strategies
         /// <param name="log">Delegado para logging.</param>
         /// <param name="modelOverride">Modelo personalizado (vacio = usar default del proveedor).</param>
         public ORBAIOrchestrator(ORBAIProvider provider, string apiKey,
-                                 Action<string> log, string modelOverride = "")
+                                 Action<string> log, string modelOverride = "", int timeoutSeconds = 10)
         {
             _provider      = provider;
             _apiKey        = apiKey;
             _log           = log ?? (_ => { });
             _modelOverride = modelOverride;
+            _timeout       = TimeSpan.FromSeconds(Math.Max(4, Math.Min(30, timeoutSeconds)));
 
             _http = new HttpClient { Timeout = _timeout };
 

@@ -206,7 +206,12 @@ namespace NinjaTrader.NinjaScript.Strategies
         public double FakeoutMaxThreshold { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Habilitar validacion IA (Capa 3)", GroupName = "AI Core (Capa 3)", Order = 6)]
+        [Range(4, 30)]
+        [Display(Name = "Timeout API (segundos)", GroupName = "AI Core (Capa 3)", Order = 6)]
+        public int AITimeoutSeconds { get; set; }
+
+        [NinjaScriptProperty]
+        [Display(Name = "Habilitar validacion IA (Capa 3)", GroupName = "AI Core (Capa 3)", Order = 7)]
         public bool EnableAIValidation { get; set; }
 
         // --- Categoria AI Advanced Layers ---
@@ -361,6 +366,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 AIModelOverride      = "";
                 AIMinConfidence      = 0.65;
                 FakeoutMaxThreshold  = 0.50;
+                AITimeoutSeconds     = 10;
                 EnableAIValidation   = true;
 
                 // AI Advanced
@@ -417,7 +423,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 // Inicializar orquestador de IA (solo en live/paper, no en backtest)
                 if (State != State.Historical)
                 {
-                    _aiOrch = new ORBAIOrchestrator(AIProvider, AIApiKey, Print, AIModelOverride);
+                    _aiOrch = new ORBAIOrchestrator(AIProvider, AIApiKey, Print, AIModelOverride, AITimeoutSeconds);
                 }
 
                 _sessionMinConfidence = AIMinConfidence;
@@ -518,6 +524,13 @@ namespace NinjaTrader.NinjaScript.Strategies
             _regimeResult        = new RegimeAnalysis { FavorableForOrb = true, MaxRiskToday = 1.0 };
             _learningResult      = new LearningAdjustment { AdjustedMinConfidence = AIMinConfidence };
             _sessionMinConfidence= AIMinConfidence;
+
+            // Actualizar volumen promedio con EMA-5 antes de resetear la sesion
+            if (_sessionVolume > 0)
+                _avgDailyVolume = _avgDailyVolume <= 0
+                    ? _sessionVolume
+                    : _avgDailyVolume * 0.80 + _sessionVolume * 0.20;
+
             _sessionVolume       = 0;
             _sessionVwap         = 0;
             _vwapCumPv           = 0;
@@ -1275,8 +1288,8 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (globHigh > double.MinValue)
                 _contextFilter.UpdateGlobex(globHigh, globLow);
 
-            // Volumen promedio del dia (estimaci  n con el volumen de ayer)
-            if (_avgDailyVolume == 0 && CurrentBar > 390)
+            // Fallback: si es el primer dia y no hay historial de volumen, estimar con ayer
+            if (_avgDailyVolume <= 0 && CurrentBar > 390)
             {
                 double vol = 0;
                 for (int i = 1; i <= 390; i++) vol += Volume[i];
@@ -1430,9 +1443,9 @@ namespace NinjaTrader.NinjaScript.Strategies
         private void DrawRejectedSignal(bool isLong)
         {
             string tag = $"Rejected_{CurrentBar}";
-            Draw.Text(this, tag, "   ", 0, isLong
+            Draw.Text(this, tag, "X", 0, isLong
                 ? Low[0]  - TickSize * 5
-                : High[0] + TickSize * 5, Brushes.Gray);
+                : High[0] + TickSize * 5, Brushes.OrangeRed);
         }
 
         private void UpdatePanel()
