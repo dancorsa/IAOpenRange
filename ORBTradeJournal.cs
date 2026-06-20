@@ -1,4 +1,4 @@
-﻿// ORBTradeJournal.cs â€" Historial de trades para aprendizaje continuo (Capa IA #2)
+// ORBTradeJournal.cs - Historial de trades para aprendizaje continuo (Capa IA #2)
 // Parte del sistema IAOpenRange para NinjaTrader 8
 
 #region Usings
@@ -13,7 +13,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 {
     /// <summary>
     /// Registro estructurado de un trade cerrado, incluyendo condiciones de entrada
-    /// y anÃ¡lisis post-trade de la Capa 5.
+    /// y analisis post-trade de la Capa 5.
     /// </summary>
     public class ORBTradeRecord
     {
@@ -63,7 +63,7 @@ namespace NinjaTrader.NinjaScript.Strategies
     }
 
     /// <summary>
-    /// Resumen de performance para un perÃ­odo de tiempo.
+    /// Resumen de performance para un periodo de tiempo.
     /// Devuelto por GetSummary() y enviado a la Capa 2.
     /// </summary>
     public class ORBPerformanceSummary
@@ -102,7 +102,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         #region Constructor
 
         /// <summary>
-        /// Inicializa el journal para un instrumento especÃ­fico.
+        /// Inicializa el journal para un instrumento especifico.
         /// </summary>
         /// <param name="instrument">Nombre del instrumento (ej. "ES 03-26").</param>
         /// <param name="log">Delegado para logging.</param>
@@ -132,7 +132,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region MÃ©todos pÃºblicos
+        #region Metodos p  blicos
 
         /// <summary>
         /// Carga el historial desde el CSV al iniciar la estrategia.
@@ -145,7 +145,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 _trades.Clear();
                 if (!File.Exists(_filePath))
                 {
-                    _log("[Journal] No existe archivo previo. Se crearÃ¡ al primer trade.");
+                    _log("[Journal] No existe archivo previo. Se creara al primer trade.");
                     return;
                 }
 
@@ -191,7 +191,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         /// <summary>
-        /// Devuelve los Ãºltimos N trades para la Capa 2.
+        /// Devuelve los   ltimos N trades para la Capa 2.
         /// </summary>
         public List<ORBTradeRecord> GetLast(int n)
         {
@@ -206,7 +206,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         /// <summary>
-        /// Calcula mÃ©tricas de performance de los Ãºltimos N dÃ­as.
+        /// Calcula metricas de performance de los   ltimos N dias.
         /// </summary>
         public ORBPerformanceSummary GetSummary(int days)
         {
@@ -227,7 +227,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                     summary.AvgRMultiple7d = last7.Average(t => t.RMultiple);
                 }
 
-                // PÃ©rdidas consecutivas desde el Ãºltimo trade hacia atrÃ¡s
+                // Perdidas consecutivas desde el   ltimo trade hacia atras
                 int consec = 0;
                 foreach (var t in _trades.OrderByDescending(t => t.Date))
                 {
@@ -250,10 +250,10 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region MÃ©todos privados
+        #region Metodos privados
 
         /// <summary>
-        /// Persiste un Ãºnico trade al archivo CSV (modo append).
+        /// Persiste un   nico trade al archivo CSV (modo append).
         /// Si el archivo no existe, escribe la cabecera primero.
         /// </summary>
         private void SaveToDisk(ORBTradeRecord t)
@@ -318,7 +318,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
         }
 
-        /// <summary>Parsea una lÃ­nea CSV al ORBTradeRecord correspondiente.</summary>
+        /// <summary>Parsea una linea CSV al ORBTradeRecord correspondiente.</summary>
         private ORBTradeRecord ParseCsvLine(string line)
         {
             if (string.IsNullOrWhiteSpace(line)) return null;
@@ -377,7 +377,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
             catch
             {
-                return null; // lÃ­nea corrupta â€" ignorar
+                return null; // linea corrupta - ignorar
             }
         }
 

@@ -1,4 +1,4 @@
-// ORBRiskManager.cs — Gestión de riesgo, stops, targets y límites diarios
+// ORBRiskManager.cs - Gesti n de riesgo, stops, targets y l mites diarios
 // Parte del sistema IAOpenRange para NinjaTrader 8
 
 #region Usings
@@ -8,8 +8,8 @@ using System;
 namespace NinjaTrader.NinjaScript.Strategies
 {
     /// <summary>
-    /// Resultado del cálculo de parámetros de una entrada.
-    /// Contiene todos los valores necesarios para configurar órdenes en NinjaTrader.
+    /// Resultado del c lculo de par metros de una entrada.
+    /// Contiene todos los valores necesarios para configurar  rdenes en NinjaTrader.
     /// </summary>
     public class TradeParameters
     {
@@ -33,11 +33,11 @@ namespace NinjaTrader.NinjaScript.Strategies
 
     /// <summary>
     /// Gestiona todos los aspectos de riesgo del sistema ORB:
-    /// cálculo de stops, targets, tamaño de posición y límites diarios.
+    /// c lculo de stops, targets, tama o de posici n y l mites diarios.
     /// </summary>
     public class ORBRiskManager
     {
-        #region Parámetros de configuración (inyectados)
+        #region Par metros de configuraci n (inyectados)
 
         // Stops
         public double StopRangeMultiplier  { get; set; } = 0.50;
@@ -57,7 +57,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         public double RiskPctPerTrade { get; set; } = 0.01;   // 1%
         public int    MaxContracts    { get; set; } = 4;
 
-        // Límites diarios
+        // L mites diarios
         public double MaxDailyLossPct   { get; set; } = 0.02;  // 2%
         public double MaxDailyProfitPct { get; set; } = 0.035; // 3.5%
         public int    MaxDailyTrades    { get; set; } = 3;
@@ -71,22 +71,22 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #region Estado diario (acumuladores)
 
-        /// <summary>PnL acumulado del día en dólares.</summary>
+        /// <summary>PnL acumulado del d a en d lares.</summary>
         public double DailyPnlUsd { get; private set; }
 
-        /// <summary>Número de trades ejecutados hoy.</summary>
+        /// <summary>N mero de trades ejecutados hoy.</summary>
         public int DailyTradeCount { get; private set; }
 
-        /// <summary>Pérdidas consecutivas en la sesión actual.</summary>
+        /// <summary>P rdidas consecutivas en la sesi n actual.</summary>
         public int ConsecutiveLosses { get; private set; }
 
-        /// <summary>True si la estrategia alcanzó el límite de pérdida diaria.</summary>
+        /// <summary>True si la estrategia alcanz  el l mite de p rdida diaria.</summary>
         public bool MaxDailyLossReached { get; private set; }
 
-        /// <summary>True si la estrategia alcanzó el objetivo de ganancia diaria.</summary>
+        /// <summary>True si la estrategia alcanz  el objetivo de ganancia diaria.</summary>
         public bool MaxDailyProfitReached { get; private set; }
 
-        /// <summary>True si se puede abrir un nuevo trade según todos los límites diarios.</summary>
+        /// <summary>True si se puede abrir un nuevo trade seg n todos los l mites diarios.</summary>
         public bool CanOpenNewTrade =>
             !MaxDailyLossReached
             && !MaxDailyProfitReached
@@ -102,7 +102,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         private readonly double       _accountCapital;
         private readonly Action<string> _log;
 
-        // Multiplicadores dinámicos de la IA
+        // Multiplicadores din micos de la IA
         private double _maxRiskTodayMultiplier = 1.0;  // Capa 1
         private double _aiRiskAdjustment       = 1.0;  // Capa 3
 
@@ -111,9 +111,9 @@ namespace NinjaTrader.NinjaScript.Strategies
         #region Constructor
 
         /// <summary>
-        /// Inicializa el gestor de riesgo con los parámetros del instrumento y cuenta.
+        /// Inicializa el gestor de riesgo con los par metros del instrumento y cuenta.
         /// </summary>
-        /// <param name="tickSize">Tamaño del tick (ej. 0.25 para ES).</param>
+        /// <param name="tickSize">Tama o del tick (ej. 0.25 para ES).</param>
         /// <param name="tickValue">Valor en USD del tick (ej. 12.50 para ES).</param>
         /// <param name="accountCapital">Capital total de la cuenta en USD.</param>
         /// <param name="log">Delegado para logging.</param>
@@ -128,10 +128,10 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region Métodos de configuración dinámica (IA)
+        #region M todos de configuraci n din mica (IA)
 
         /// <summary>
-        /// Establece el multiplicador de riesgo máximo del día (de la Capa 1).
+        /// Establece el multiplicador de riesgo m ximo del d a (de la Capa 1).
         /// Valor entre 0.5 y 1.0.
         /// </summary>
         public void SetMaxRiskTodayMultiplier(double multiplier)
@@ -151,18 +151,18 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region Cálculo de parámetros de trade
+        #region C lculo de par metros de trade
 
         /// <summary>
-        /// Calcula todos los parámetros de una nueva entrada (contratos, stop, targets).
+        /// Calcula todos los par metros de una nueva entrada (contratos, stop, targets).
         /// </summary>
         /// <param name="entryPrice">Precio de entrada.</param>
         /// <param name="orbRangeTicks">Amplitud del ORB en ticks.</param>
         /// <param name="atr14Ticks">ATR(14) en ticks del M5 actual.</param>
         /// <param name="isLong">True si es entrada LONG.</param>
-        /// <param name="globexFactor">Factor de ajuste por posición respecto a Globex (0.70 o 1.0).</param>
+        /// <param name="globexFactor">Factor de ajuste por posici n respecto a Globex (0.70 o 1.0).</param>
         /// <param name="volumeFactor">Factor de ajuste por volumen (0.60 o 1.0).</param>
-        /// <param name="dayBiasFactor">Factor de ajuste por sesgo del día (0.70 o 1.0).</param>
+        /// <param name="dayBiasFactor">Factor de ajuste por sesgo del d a (0.70 o 1.0).</param>
         /// <param name="isReEntry">True si es un segundo intento tras fakeout.</param>
         public TradeParameters Calculate(double entryPrice, double orbRangeTicks,
                                          double atr14Ticks, bool isLong,
@@ -208,7 +208,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             result.RiskReward_T1 = stopTicks > 0 ? t1Ticks / stopTicks : 0;
             result.RiskReward_T2 = stopTicks > 0 ? t2Ticks / stopTicks : 0;
 
-            // --- 3. Calcular número de contratos ---
+            // --- 3. Calcular n mero de contratos ---
             double riskPerTrade = _accountCapital * RiskPctPerTrade
                                   * _maxRiskTodayMultiplier
                                   * _aiRiskAdjustment
@@ -260,7 +260,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region Gestión de límites diarios
+        #region Gesti n de l mites diarios
 
         /// <summary>
         /// Resetea los acumuladores diarios. Llamar en OnSessionStart().
@@ -278,7 +278,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         /// <summary>
-        /// Registra el resultado de un trade cerrado y actualiza los límites.
+        /// Registra el resultado de un trade cerrado y actualiza los l mites.
         /// </summary>
         /// <param name="pnlUsd">PnL del trade en USD (positivo = ganancia).</param>
         public void RecordTradeResult(double pnlUsd)
@@ -291,14 +291,14 @@ namespace NinjaTrader.NinjaScript.Strategies
             else
                 ConsecutiveLosses = 0;
 
-            // Verificar límites
+            // Verificar l mites
             double maxLossUsd   = _accountCapital * MaxDailyLossPct;
             double maxProfitUsd = _accountCapital * MaxDailyProfitPct;
 
             if (DailyPnlUsd <= -maxLossUsd)
             {
                 MaxDailyLossReached = true;
-                _log($"[RiskMgr] LÍMITE DE PÉRDIDA DIARIA alcanzado: {DailyPnlUsd:F2} USD");
+                _log($"[RiskMgr] L MITE DE P RDIDA DIARIA alcanzado: {DailyPnlUsd:F2} USD");
             }
 
             if (DailyPnlUsd >= maxProfitUsd)
@@ -308,8 +308,8 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
 
             if (ConsecutiveLosses >= MaxConsecLosses)
-                _log($"[RiskMgr] Pérdidas consecutivas ({ConsecutiveLosses}/{MaxConsecLosses}) — " +
-                     "se bloqueará próxima entrada.");
+                _log($"[RiskMgr] P rdidas consecutivas ({ConsecutiveLosses}/{MaxConsecLosses}) - " +
+                     "se bloquear  pr xima entrada.");
 
             _log($"[RiskMgr] Trade registrado: PnL {pnlUsd:F2} USD | " +
                  $"Diario: {DailyPnlUsd:F2} USD | Trades: {DailyTradeCount}/{MaxDailyTrades} | " +
@@ -317,7 +317,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         /// <summary>
-        /// Evalúa si se puede abrir una nueva posición y describe el motivo si no se puede.
+        /// Eval a si se puede abrir una nueva posici n y describe el motivo si no se puede.
         /// </summary>
         public bool CheckCanTrade(out string blockReason)
         {
@@ -325,7 +325,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             if (MaxDailyLossReached)
             {
-                blockReason = $"Límite de pérdida diaria alcanzado ({DailyPnlUsd:F2} USD).";
+                blockReason = $"L mite de p rdida diaria alcanzado ({DailyPnlUsd:F2} USD).";
                 return false;
             }
             if (MaxDailyProfitReached)
@@ -335,12 +335,12 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
             if (DailyTradeCount >= MaxDailyTrades)
             {
-                blockReason = $"Máximo de trades diarios alcanzado ({MaxDailyTrades}).";
+                blockReason = $"M ximo de trades diarios alcanzado ({MaxDailyTrades}).";
                 return false;
             }
             if (ConsecutiveLosses >= MaxConsecLosses)
             {
-                blockReason = $"Pérdidas consecutivas ({ConsecutiveLosses}/{MaxConsecLosses}).";
+                blockReason = $"P rdidas consecutivas ({ConsecutiveLosses}/{MaxConsecLosses}).";
                 return false;
             }
             return true;

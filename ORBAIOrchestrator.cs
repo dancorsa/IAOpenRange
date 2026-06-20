@@ -1,4 +1,4 @@
-﻿// ORBAIOrchestrator.cs â€" Orquestador de las 5 capas de IA del sistema ORB
+// ORBAIOrchestrator.cs - Orquestador de las 5 capas de IA del sistema ORB
 // Parte del sistema IAOpenRange para NinjaTrader 8
 // Proveedor configurable: Claude (Anthropic) u OpenAI
 
@@ -350,7 +350,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         /// <param name="provider">Proveedor de IA (Claude, OpenAI o Disabled).</param>
         /// <param name="apiKey">API Key del proveedor seleccionado.</param>
         /// <param name="log">Delegado para logging.</param>
-        /// <param name="modelOverride">Modelo personalizado (vacÃ­o = usar default del proveedor).</param>
+        /// <param name="modelOverride">Modelo personalizado (vacio = usar default del proveedor).</param>
         public ORBAIOrchestrator(ORBAIProvider provider, string apiKey,
                                  Action<string> log, string modelOverride = "")
         {
@@ -371,7 +371,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 _http.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
             }
 
-            _log($"[AI] Orquestador inicializado â€" Proveedor:{_provider} Modelo:{GetModelName()}");
+            _log($"[AI] Orquestador inicializado - Proveedor:{_provider} Modelo:{GetModelName()}");
         }
 
         public void Dispose()
@@ -385,10 +385,10 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 1 â€" AnÃ¡lisis de rÃ©gimen diario
+        #region CAPA 1 - Analisis de regimen diario
 
         /// <summary>
-        /// Analiza el rÃ©gimen del dÃ­a (tendencia/rango/alta volatilidad) antes de operar.
+        /// Analiza el regimen del dia (tendencia/rango/alta volatilidad) antes de operar.
         /// Llamar UNA VEZ en OnSessionStart().
         /// </summary>
         public async Task<RegimeAnalysis> AnalyzeDailyRegimeAsync(DailyContextData data)
@@ -402,11 +402,11 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (_provider == ORBAIProvider.Disabled) return fallback;
 
             string systemPrompt =
-                "Eres un analista de rÃ©gimen de mercado para futuros del CME. " +
-                "RecibirÃ¡s contexto pre-apertura y debes evaluar si las condiciones " +
+                "Eres un analista de regimen de mercado para futuros del CME. " +
+                "Recibiras contexto pre-apertura y debes evaluar si las condiciones " +
                 "favorecen una estrategia de breakout (ORB) o si el mercado probablemente " +
-                "estarÃ¡ en rango sin convicciÃ³n direccional.\n\n" +
-                "Responde ÃšNICAMENTE con JSON vÃ¡lido (sin texto adicional, sin markdown):\n" +
+                "estara en rango sin convicci  n direccional.\n\n" +
+                "Responde uNICAMENTE con JSON valido (sin texto adicional, sin markdown):\n" +
                 "{\n" +
                 "  \"regime\": \"trending | ranging | high_volatility | uncertain\",\n" +
                 "  \"conviction\": 0.0,\n" +
@@ -416,9 +416,9 @@ namespace NinjaTrader.NinjaScript.Strategies
                 "  \"regime_reason\": \"string max 150 chars\"\n" +
                 "}\n\n" +
                 "Favorece ORB cuando: gap significativo presente, Globex range normal, " +
-                "dÃ­a no es viernes tarde ni vÃ­spera de festivo, sin Fed en las prÃ³ximas 2h. " +
+                "dia no es viernes tarde ni vispera de festivo, sin Fed en las pr  ximas 2h. " +
                 "No favorece ORB cuando: gap_pct cercano a 0 con Globex muy amplio, " +
-                "mÃºltiples earnings, viernes despuÃ©s de mediodÃ­a.";
+                "m  ltiples earnings, viernes despues de mediodia.";
 
             string userMsg = JsonSerializer.Serialize(new
             {
@@ -457,7 +457,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                     foreach (var d in dirs.EnumerateArray())
                         result.AvoidDirections.Add(d.GetString() ?? "");
 
-                _log($"[AI-Capa1] RÃ©gimen:{result.Regime} Conv:{result.Conviction:F2} " +
+                _log($"[AI-Capa1] Regimen:{result.Regime} Conv:{result.Conviction:F2} " +
                      $"ORB:{result.FavorableForOrb} MaxRisk:{result.MaxRiskToday:F2}");
 
                 return result;
@@ -471,10 +471,10 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 2 â€" Aprendizaje continuo
+        #region CAPA 2 - Aprendizaje continuo
 
         /// <summary>
-        /// Analiza los Ãºltimos N trades para ajustar el umbral de confianza mÃ­nimo del dÃ­a.
+        /// Analiza los   ltimos N trades para ajustar el umbral de confianza minimo del dia.
         /// Llamar UNA VEZ en OnSessionStart(), en paralelo con la Capa 1.
         /// </summary>
         public async Task<LearningAdjustment> AnalyzeRecentPerformanceAsync(
@@ -493,20 +493,20 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             string systemPrompt =
                 "Eres un analista de performance para una estrategia de Opening Range Breakout. " +
-                "RecibirÃ¡s los Ãºltimos 20 trades con sus condiciones y resultados. " +
-                "Identifica patrones de Ã©xito y fracaso para ajustar el criterio de hoy.\n\n" +
-                "Responde ÃšNICAMENTE con JSON vÃ¡lido:\n" +
+                "Recibiras los   ltimos 20 trades con sus condiciones y resultados. " +
+                "Identifica patrones de exito y fracaso para ajustar el criterio de hoy.\n\n" +
+                "Responde uNICAMENTE con JSON valido:\n" +
                 "{\n" +
                 "  \"adjusted_min_confidence\": 0.65,\n" +
                 "  \"patterns_working\": [\"string\"],\n" +
                 "  \"patterns_failing\": [\"string\"],\n" +
                 "  \"session_guidance\": \"string max 200 chars\"\n" +
                 "}\n\n" +
-                "Si win_rate_20 < 0.45 â†’ sube adjusted_min_confidence a 0.75-0.85. " +
-                "Si win_rate_20 > 0.65 â†’ puede bajar a 0.55-0.60. " +
+                "Si win_rate_20 < 0.45   ' sube adjusted_min_confidence a 0.75-0.85. " +
+                "Si win_rate_20 > 0.65   ' puede bajar a 0.55-0.60. " +
                 "Identifica patrones de fracaso repetidos (gap opuesto, viernes, bajo volumen).";
 
-            // Serializar los Ãºltimos 20 trades de forma compacta
+            // Serializar los   ltimos 20 trades de forma compacta
             var tradesJson = new List<object>();
             foreach (var t in last20Trades)
             {
@@ -563,7 +563,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                         result.PatternsFailing.Add(p.GetString() ?? "");
 
                 _log($"[AI-Capa2] MinConf ajustado:{result.AdjustedMinConfidence:F2} " +
-                     $"GuÃ­a:{result.SessionGuidance}");
+                     $"Guia:{result.SessionGuidance}");
 
                 return result;
             }
@@ -576,31 +576,31 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 3 â€" ValidaciÃ³n de entrada (bloqueante)
+        #region CAPA 3 - Validaci  n de entrada (bloqueante)
 
         /// <summary>
-        /// Valida si una seÃ±al de breakout es genuina o probable fakeout.
-        /// Llamada BLOQUEANTE â€" condiciona la decisiÃ³n de entrada.
+        /// Valida si una senal de breakout es genuina o probable fakeout.
+        /// Llamada BLOQUEANTE - condiciona la decisi  n de entrada.
         /// </summary>
         public async Task<EntrySignalValidation> ValidateEntryAsync(ORBSignalPayload payload)
         {
             var fallback = new EntrySignalValidation
             {
                 Approve = false, Confidence = 0.0,
-                Reason = "API no disponible â€" entrada rechazada por seguridad.",
+                Reason = "API no disponible - entrada rechazada por seguridad.",
                 RiskAdjustment = 1.0, FakeoutProbability = 1.0, IsValid = false
             };
 
             if (_provider == ORBAIProvider.Disabled)
                 return new EntrySignalValidation { Approve = true, Confidence = 0.70,
                     RiskAdjustment = 1.0, FakeoutProbability = 0.30, IsValid = true,
-                    Reason = "IA deshabilitada â€" aprobaciÃ³n automÃ¡tica." };
+                    Reason = "IA deshabilitada - aprobaci  n automatica." };
 
             string systemPrompt =
                 "Eres un analista cuantitativo especializado en estrategias de Opening Range Breakout " +
-                "(ORB) en futuros del CME. RecibirÃ¡s datos de una seÃ±al de breakout junto con el " +
-                "rÃ©gimen del dÃ­a y patrones histÃ³ricos recientes. Determina si es breakout genuino.\n\n" +
-                "Responde ÃšNICAMENTE con JSON vÃ¡lido:\n" +
+                "(ORB) en futuros del CME. Recibiras datos de una senal de breakout junto con el " +
+                "regimen del dia y patrones hist  ricos recientes. Determina si es breakout genuino.\n\n" +
+                "Responde uNICAMENTE con JSON valido:\n" +
                 "{\n" +
                 "  \"approve\": true,\n" +
                 "  \"confidence\": 0.0,\n" +
@@ -608,13 +608,13 @@ namespace NinjaTrader.NinjaScript.Strategies
                 "  \"risk_adjustment\": 1.0,\n" +
                 "  \"fakeout_probability\": 0.0\n" +
                 "}\n\n" +
-                "APROBACIÃ"N: orb_range_vs_atr_pct 30%-120%, breakout_confirm_ticks >= 2, " +
+                "APROBACIoN: orb_range_vs_atr_pct 30%-120%, breakout_confirm_ticks >= 2, " +
                 "volume_ratio >= 1.20, breakout_is_outside_globex = true, rsi_m5 alineado, " +
                 "gap alineado o flat, clearance_ticks >= 8, risk_reward_t1 >= 1.5, " +
                 "daily_regime = trending o favorable.\n" +
                 "RECHAZO: bars_since_breakout > 3, orb_range_vs_atr_pct > 150%, " +
                 "volume_ratio < 0.70, gap opuesto, clearance < 5, " +
-                "patrÃ³n coincide con patterns_failing_today (-0.20 extra en confidence).\n" +
+                "patr  n coincide con patterns_failing_today (-0.20 extra en confidence).\n" +
                 "Usa session_min_confidence como umbral de referencia, no un valor fijo.";
 
             string userMsg = JsonSerializer.Serialize(new
@@ -673,7 +673,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 };
 
                 _log($"[AI-Capa3] Aprobado:{result.Approve} Conf:{result.Confidence:F2} " +
-                     $"Fakeout:{result.FakeoutProbability:F2} RazÃ³n:{result.Reason}");
+                     $"Fakeout:{result.FakeoutProbability:F2} Raz  n:{result.Reason}");
 
                 return result;
             }
@@ -686,36 +686,36 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 4 â€" Guardia de riesgo sistÃ©mico (bloqueante)
+        #region CAPA 4 - Guardia de riesgo sistemico (bloqueante)
 
         /// <summary>
-        /// EvalÃºa si una condiciÃ³n de mercado anÃ³mala requiere ajuste de stop o cierre.
-        /// Llamada BLOQUEANTE cuando hay posiciÃ³n abierta y se detecta anomalÃ­a.
+        /// Eval  a si una condici  n de mercado an  mala requiere ajuste de stop o cierre.
+        /// Llamada BLOQUEANTE cuando hay posici  n abierta y se detecta anomalia.
         /// </summary>
         public async Task<RiskGuardAction> CheckSystemicRiskAsync(RiskGuardPayload payload)
         {
             var fallback = new RiskGuardAction
             {
                 Action = "hold", Urgency = "low",
-                Reasoning = "API no disponible â€" mantener posiciÃ³n.", IsValid = false
+                Reasoning = "API no disponible - mantener posici  n.", IsValid = false
             };
 
             if (_provider == ORBAIProvider.Disabled) return fallback;
 
             string systemPrompt =
-                "Eres un sistema de guardia de riesgo para una posiciÃ³n abierta en futuros. " +
-                "Se detectÃ³ una condiciÃ³n de mercado anÃ³mala. EvalÃºa si la posiciÃ³n debe " +
+                "Eres un sistema de guardia de riesgo para una posici  n abierta en futuros. " +
+                "Se detect   una condici  n de mercado an  mala. Eval  a si la posici  n debe " +
                 "mantenerse, ajustarse o cerrarse inmediatamente.\n\n" +
-                "Responde ÃšNICAMENTE con JSON vÃ¡lido:\n" +
+                "Responde uNICAMENTE con JSON valido:\n" +
                 "{\n" +
                 "  \"action\": \"hold | tighten_stop | close_immediately\",\n" +
                 "  \"urgency\": \"low | medium | high | critical\",\n" +
                 "  \"new_stop_distance_ticks\": null,\n" +
                 "  \"reasoning\": \"string max 100 chars\"\n" +
                 "}\n\n" +
-                "close_immediately: trigger_magnitude > 3.0 Y posiciÃ³n va contra el movimiento. " +
-                "tighten_stop: movimiento a favor pero con riesgo de reversiÃ³n violenta. " +
-                "hold: movimiento anÃ³malo confirma la posiciÃ³n con bajo riesgo.";
+                "close_immediately: trigger_magnitude > 3.0 Y posici  n va contra el movimiento. " +
+                "tighten_stop: movimiento a favor pero con riesgo de reversi  n violenta. " +
+                "hold: movimiento an  malo confirma la posici  n con bajo riesgo.";
 
             string userMsg = JsonSerializer.Serialize(new
             {
@@ -749,8 +749,8 @@ namespace NinjaTrader.NinjaScript.Strategies
                     && stopProp.ValueKind != JsonValueKind.Null)
                     result.NewStopDistanceTicks = stopProp.GetDouble();
 
-                _log($"[AI-Capa4] AcciÃ³n:{result.Action} Urgencia:{result.Urgency} " +
-                     $"NuevoStop:{result.NewStopDistanceTicks} RazÃ³n:{result.Reasoning}");
+                _log($"[AI-Capa4] Acci  n:{result.Action} Urgencia:{result.Urgency} " +
+                     $"NuevoStop:{result.NewStopDistanceTicks} Raz  n:{result.Reasoning}");
 
                 return result;
             }
@@ -763,26 +763,26 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 5 â€" AnÃ¡lisis post-trade (asÃ­ncrono, fire-and-forget)
+        #region CAPA 5 - Analisis post-trade (asincrono, fire-and-forget)
 
         /// <summary>
         /// Analiza un trade cerrado para extraer lecciones y alimentar la Capa 2.
-        /// Llamada ASÃNCRONA NO BLOQUEANTE â€" corre en background.
+        /// Llamada AS  NCRONA NO BLOQUEANTE - corre en background.
         /// </summary>
         public async Task<PostTradeAnalysis> AnalyzeClosedTradeAsync(ClosedTradePayload payload)
         {
             var fallback = new PostTradeAnalysis
             {
-                PatternTag = "unknown", Lesson = "Sin anÃ¡lisis disponible.", IsValid = false
+                PatternTag = "unknown", Lesson = "Sin analisis disponible.", IsValid = false
             };
 
             if (_provider == ORBAIProvider.Disabled) return fallback;
 
             string systemPrompt =
                 "Eres un analista post-trade para una estrategia de Opening Range Breakout. " +
-                "RecibirÃ¡s los detalles completos de un trade cerrado, incluyendo la predicciÃ³n " +
-                "de la IA al entrar y lo que realmente ocurriÃ³. Analiza la causa raÃ­z.\n\n" +
-                "Responde ÃšNICAMENTE con JSON vÃ¡lido:\n" +
+                "Recibiras los detalles completos de un trade cerrado, incluyendo la predicci  n " +
+                "de la IA al entrar y lo que realmente ocurri  . Analiza la causa raiz.\n\n" +
+                "Responde uNICAMENTE con JSON valido:\n" +
                 "{\n" +
                 "  \"primary_failure_reason\": null,\n" +
                 "  \"pattern_tag\": \"fakeout_on_gap_against | low_volume_entry | news_spike | " +
@@ -790,8 +790,8 @@ namespace NinjaTrader.NinjaScript.Strategies
                 "  \"confidence_calibration_error\": 0.0,\n" +
                 "  \"lesson\": \"string max 150 chars\"\n" +
                 "}\n\n" +
-                "confidence_calibration_error: si confidence fue 0.85 y el trade perdiÃ³ = 0.7-0.8. " +
-                "Si confidence fue 0.55 y perdiÃ³ = 0.1-0.2. Si ganÃ³ = 0.0-0.1.";
+                "confidence_calibration_error: si confidence fue 0.85 y el trade perdi   = 0.7-0.8. " +
+                "Si confidence fue 0.55 y perdi   = 0.1-0.2. Si gan   = 0.0-0.1.";
 
             var entrySnap = payload.EntryConditions;
             string userMsg = JsonSerializer.Serialize(new
@@ -843,7 +843,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 };
 
                 _log($"[AI-Capa5] PatternTag:{result.PatternTag} " +
-                     $"CalibErr:{result.ConfidenceCalibrationError:F2} LecciÃ³n:{result.Lesson}");
+                     $"CalibErr:{result.ConfidenceCalibrationError:F2} Lecci  n:{result.Lesson}");
 
                 return result;
             }
@@ -856,7 +856,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region Motor HTTP comÃºn
+        #region Motor HTTP com  n
 
         /// <summary>
         /// Realiza la llamada HTTP al proveedor de IA configurado.

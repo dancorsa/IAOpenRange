@@ -1,4 +1,4 @@
-﻿// OpeningRangeBreakoutAI.cs â€" Estrategia principal ORB con IA multicapa
+// OpeningRangeBreakoutAI.cs - Estrategia principal ORB con IA multicapa
 // NinjaTrader 8 | NinjaScript | .NET 4.8 | C# 7.x
 // Integra: ORBCalculator, ORBContextFilter, ORBTradeJournal, ORBAIOrchestrator, ORBRiskManager
 
@@ -24,9 +24,9 @@ namespace NinjaTrader.NinjaScript.Strategies
     /// </summary>
     public class OpeningRangeBreakoutAI : Strategy
     {
-        #region =================== PARÃMETROS EDITABLES ===================
+        #region =================== PAR  METROS EDITABLES ===================
 
-        // --- CategorÃ­a ORB Setup ---
+        // --- Categoria ORB Setup ---
         [NinjaScriptProperty]
         [Range(5, 60)]
         [Display(Name = "Ventana ORB (min)", GroupName = "ORB Setup", Order = 1)]
@@ -34,22 +34,22 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty]
         [Range(1, 50)]
-        [Display(Name = "MÃ­n. ticks del rango", GroupName = "ORB Setup", Order = 2)]
+        [Display(Name = "Min. ticks del rango", GroupName = "ORB Setup", Order = 2)]
         public int MinRangeTicks { get; set; }
 
         [NinjaScriptProperty]
         [Range(10, 500)]
-        [Display(Name = "MÃ¡x. ticks del rango", GroupName = "ORB Setup", Order = 3)]
+        [Display(Name = "Max. ticks del rango", GroupName = "ORB Setup", Order = 3)]
         public int MaxRangeTicks { get; set; }
 
         [NinjaScriptProperty]
         [Range(1, 10)]
-        [Display(Name = "Ticks de confirmaciÃ³n breakout", GroupName = "ORB Setup", Order = 4)]
+        [Display(Name = "Ticks de confirmaci  n breakout", GroupName = "ORB Setup", Order = 4)]
         public int BreakoutConfirmTicks { get; set; }
 
         [NinjaScriptProperty]
         [Range(1, 10)]
-        [Display(Name = "MÃ¡x. barras M1 desde breakout", GroupName = "ORB Setup", Order = 5)]
+        [Display(Name = "Max. barras M1 desde breakout", GroupName = "ORB Setup", Order = 5)]
         public int MaxBarsAfterBreakout { get; set; }
 
         [NinjaScriptProperty]
@@ -74,34 +74,34 @@ namespace NinjaTrader.NinjaScript.Strategies
         [Display(Name = "Permitir trade reversal", GroupName = "ORB Setup", Order = 10)]
         public bool AllowReversalTrade { get; set; }
 
-        // --- CategorÃ­a SesiÃ³n ---
+        // --- Categoria Sesi  n ---
         [NinjaScriptProperty]
-        [Display(Name = "Inicio de trading (ET)", GroupName = "SesiÃ³n", Order = 1)]
+        [Display(Name = "Inicio de trading (ET)", GroupName = "Sesi  n", Order = 1)]
         public TimeSpan TradingStartTime { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Fin de nuevas entradas (ET)", GroupName = "SesiÃ³n", Order = 2)]
+        [Display(Name = "Fin de nuevas entradas (ET)", GroupName = "Sesi  n", Order = 2)]
         public TimeSpan TradingEndTime { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Cierre forzado (ET)", GroupName = "SesiÃ³n", Order = 3)]
+        [Display(Name = "Cierre forzado (ET)", GroupName = "Sesi  n", Order = 3)]
         public TimeSpan ForceCloseTime { get; set; }
 
         [NinjaScriptProperty]
         [Range(0.05, 2.0)]
-        [Display(Name = "Umbral gap (%)", GroupName = "SesiÃ³n", Order = 4)]
+        [Display(Name = "Umbral gap (%)", GroupName = "Sesi  n", Order = 4)]
         public double GapThresholdPct { get; set; }
 
         [NinjaScriptProperty]
         [Range(0, 60)]
-        [Display(Name = "Bloquear N min antes de noticia", GroupName = "SesiÃ³n", Order = 5)]
+        [Display(Name = "Bloquear N min antes de noticia", GroupName = "Sesi  n", Order = 5)]
         public int BlockMinutesBeforeNews { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Horarios de noticias (HH:mm,HH:mm)", GroupName = "SesiÃ³n", Order = 6)]
+        [Display(Name = "Horarios de noticias (HH:mm,HH:mm)", GroupName = "Sesi  n", Order = 6)]
         public string HighImpactTimes { get; set; }
 
-        // --- CategorÃ­a Risk Management ---
+        // --- Categoria Risk Management ---
         [NinjaScriptProperty]
         [Range(0.001, 0.05)]
         [Display(Name = "Riesgo por trade (%)", GroupName = "Risk Management", Order = 1)]
@@ -109,7 +109,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty]
         [Range(1, 20)]
-        [Display(Name = "MÃ¡x. contratos", GroupName = "Risk Management", Order = 2)]
+        [Display(Name = "Max. contratos", GroupName = "Risk Management", Order = 2)]
         public int MaxContracts { get; set; }
 
         [NinjaScriptProperty]
@@ -124,7 +124,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty]
         [Range(4, 30)]
-        [Display(Name = "Stop mÃ­nimo (ticks)", GroupName = "Risk Management", Order = 5)]
+        [Display(Name = "Stop minimo (ticks)", GroupName = "Risk Management", Order = 5)]
         public int MinStopTicks { get; set; }
 
         [NinjaScriptProperty]
@@ -164,7 +164,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty]
         [Range(0.01, 0.10)]
-        [Display(Name = "PÃ©rdida diaria mÃ¡x. (%)", GroupName = "Risk Management", Order = 13)]
+        [Display(Name = "Perdida diaria max. (%)", GroupName = "Risk Management", Order = 13)]
         public double MaxDailyLoss { get; set; }
 
         [NinjaScriptProperty]
@@ -174,15 +174,15 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty]
         [Range(1, 10)]
-        [Display(Name = "MÃ¡x. trades por dÃ­a", GroupName = "Risk Management", Order = 15)]
+        [Display(Name = "Max. trades por dia", GroupName = "Risk Management", Order = 15)]
         public int MaxDailyTrades { get; set; }
 
         [NinjaScriptProperty]
         [Range(1, 5)]
-        [Display(Name = "MÃ¡x. pÃ©rdidas consecutivas", GroupName = "Risk Management", Order = 16)]
+        [Display(Name = "Max. perdidas consecutivas", GroupName = "Risk Management", Order = 16)]
         public int MaxConsecutiveLosses { get; set; }
 
-        // --- CategorÃ­a AI Core (Capa 3) ---
+        // --- Categoria AI Core (Capa 3) ---
         [NinjaScriptProperty]
         [Display(Name = "Proveedor de IA", GroupName = "AI Core (Capa 3)", Order = 1)]
         public ORBAIProvider AIProvider { get; set; }
@@ -192,26 +192,26 @@ namespace NinjaTrader.NinjaScript.Strategies
         public string AIApiKey { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Modelo personalizado (vacÃ­o = default)", GroupName = "AI Core (Capa 3)", Order = 3)]
+        [Display(Name = "Modelo personalizado (vacio = default)", GroupName = "AI Core (Capa 3)", Order = 3)]
         public string AIModelOverride { get; set; }
 
         [NinjaScriptProperty]
         [Range(0.40, 0.95)]
-        [Display(Name = "Confianza mÃ­nima IA", GroupName = "AI Core (Capa 3)", Order = 4)]
+        [Display(Name = "Confianza minima IA", GroupName = "AI Core (Capa 3)", Order = 4)]
         public double AIMinConfidence { get; set; }
 
         [NinjaScriptProperty]
         [Range(0.20, 0.80)]
-        [Display(Name = "Prob. fakeout mÃ¡xima", GroupName = "AI Core (Capa 3)", Order = 5)]
+        [Display(Name = "Prob. fakeout maxima", GroupName = "AI Core (Capa 3)", Order = 5)]
         public double FakeoutMaxThreshold { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Habilitar validaciÃ³n IA (Capa 3)", GroupName = "AI Core (Capa 3)", Order = 6)]
+        [Display(Name = "Habilitar validaci  n IA (Capa 3)", GroupName = "AI Core (Capa 3)", Order = 6)]
         public bool EnableAIValidation { get; set; }
 
-        // --- CategorÃ­a AI Advanced Layers ---
+        // --- Categoria AI Advanced Layers ---
         [NinjaScriptProperty]
-        [Display(Name = "Habilitar anÃ¡lisis de rÃ©gimen (Capa 1)", GroupName = "AI Advanced Layers", Order = 1)]
+        [Display(Name = "Habilitar analisis de regimen (Capa 1)", GroupName = "AI Advanced Layers", Order = 1)]
         public bool EnableDailyRegimeCheck { get; set; }
 
         [NinjaScriptProperty]
@@ -228,7 +228,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         public int RiskGuardCheckIntervalBars { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Habilitar anÃ¡lisis post-trade (Capa 5)", GroupName = "AI Advanced Layers", Order = 5)]
+        [Display(Name = "Habilitar analisis post-trade (Capa 5)", GroupName = "AI Advanced Layers", Order = 5)]
         public bool EnablePostTradeAnalysis { get; set; }
 
         [NinjaScriptProperty]
@@ -247,12 +247,12 @@ namespace NinjaTrader.NinjaScript.Strategies
         private ORBAIOrchestrator _aiOrch;
         private ORBTradeJournal   _journal;
 
-        // Estado del dÃ­a
+        // Estado del dia
         private bool   _dailyTradingEnabled  = true;
         private bool   _sessionInitialized   = false;
         private bool   _orbWindowOpen        = false;
         private bool   _orbWindowClosed      = false;
-        private bool   _newPositionBlocked   = false;   // despuÃ©s de 14:30
+        private bool   _newPositionBlocked   = false;   // despues de 14:30
 
         // Resultados de las capas 1 y 2
         private RegimeAnalysis    _regimeResult;
@@ -288,11 +288,11 @@ namespace NinjaTrader.NinjaScript.Strategies
         private bool   _riskGuardTriggered  = false;
         private string _riskGuardLastAction = "";
 
-        // Seguimiento de volumen promedio (aproximaciÃ³n 30 dÃ­as)
+        // Seguimiento de volumen promedio (aproximaci  n 30 dias)
         private double _avgDailyVolume = 0;
         private double _sessionVolume  = 0;
 
-        // Indicadores tÃ©cnicos (M1 = BarsInProgress 0, M5 = 1, M15 = 2)
+        // Indicadores tecnicos (M1 = BarsInProgress 0, M5 = 1, M15 = 2)
         private NinjaTrader.NinjaScript.Indicators.ATR  _atrM1;
         private NinjaTrader.NinjaScript.Indicators.ATR  _atrM5;
         private NinjaTrader.NinjaScript.Indicators.RSI  _rsiM5;
@@ -328,7 +328,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 ReEntryWaitBars      = 6;
                 AllowReversalTrade   = false;
 
-                // SesiÃ³n
+                // Sesi  n
                 TradingStartTime         = new TimeSpan(10, 0, 0);
                 TradingEndTime           = new TimeSpan(14, 30, 0);
                 ForceCloseTime           = new TimeSpan(15, 0, 0);
@@ -370,7 +370,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 EnablePostTradeAnalysis     = true;
                 JournalLookbackTrades       = 20;
 
-                // NT8: calcular PnL de posiciÃ³n
+                // NT8: calcular PnL de posici  n
                 Calculate               = Calculate.OnBarClose;
                 IsExitOnSessionCloseStrategy = true;
                 ExitOnSessionCloseSeconds    = 30;
@@ -450,7 +450,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region =================== EVENTOS DE SESIÃ"N ===================
+        #region =================== EVENTOS DE SESIoN ===================
 
         private void ResetSessionState()
         {
@@ -512,12 +512,12 @@ namespace NinjaTrader.NinjaScript.Strategies
                     _regimeResult   = t1.Result;
                     _learningResult = t2.Result;
 
-                    // Aplicar Capa 1: desactivar trading si el rÃ©gimen no favorece ORB
+                    // Aplicar Capa 1: desactivar trading si el regimen no favorece ORB
                     if (EnableDailyRegimeCheck && _regimeResult.IsValid
                         && !_regimeResult.FavorableForOrb && _regimeResult.Conviction >= 0.70)
                     {
                         _dailyTradingEnabled = false;
-                        Print($"[Capa1] Trading DESHABILITADO â€" rÃ©gimen: {_regimeResult.RegimeReason}");
+                        Print($"[Capa1] Trading DESHABILITADO - regimen: {_regimeResult.RegimeReason}");
                     }
 
                     if (_regimeResult.IsValid)
@@ -528,13 +528,13 @@ namespace NinjaTrader.NinjaScript.Strategies
                         _sessionMinConfidence = _learningResult.AdjustedMinConfidence;
 
                     _panelNeedsUpdate = true;
-                    Print($"[SesiÃ³n] RÃ©gimen:{_regimeResult.Regime} | " +
+                    Print($"[Sesi  n] Regimen:{_regimeResult.Regime} | " +
                           $"MinConf ajustada:{_sessionMinConfidence:F2} | " +
                           $"TradingEnabled:{_dailyTradingEnabled}");
                 }
                 catch (Exception ex)
                 {
-                    Print($"[SesiÃ³n] ERROR en capas 1/2: {ex.Message}");
+                    Print($"[Sesi  n] ERROR en capas 1/2: {ex.Message}");
                 }
             });
         }
@@ -545,7 +545,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         protected override void OnBarUpdate()
         {
-            // Solo procesar la serie M1 (BarsInProgress == 0) para la lÃ³gica principal
+            // Solo procesar la serie M1 (BarsInProgress == 0) para la l  gica principal
             if (BarsInProgress != 0) return;
             if (Bars.IsFirstBarOfSession)
                 ResetSessionState();
@@ -555,24 +555,24 @@ namespace NinjaTrader.NinjaScript.Strategies
             var tod = now.TimeOfDay;
             UpdateSessionVwap();
 
-            // â"€â"€ FASE 1: Pre-market â€" calcular Globex y gap â"€â"€
+            //  "  "  FASE 1: Pre-market - calcular Globex y gap  "  " 
             if (!_sessionInitialized && tod >= new TimeSpan(8, 0, 0) && tod < new TimeSpan(9, 30, 0))
             {
                 InitializePreMarket();
             }
 
-            // â"€â"€ FASE 2: Inicio ventana ORB a las 09:30 â"€â"€
+            //  "  "  FASE 2: Inicio ventana ORB a las 09:30  "  " 
             if (tod >= new TimeSpan(9, 30, 0) && !_orbWindowOpen && !_orbWindowClosed)
             {
                 _orbCalc.StartBuilding();
                 _orbWindowOpen = true;
 
-                // Calcular gap de apertura con el primer precio del dÃ­a
+                // Calcular gap de apertura con el primer precio del dia
                 _contextFilter.CalculateGap(Open[0]);
-                Print($"[ORB] Ventana abierta â€" Gap: {_contextFilter.GapPct:F2}% {_contextFilter.GapDirection}");
+                Print($"[ORB] Ventana abierta - Gap: {_contextFilter.GapPct:F2}% {_contextFilter.GapDirection}");
             }
 
-            // Actualizar rango mientras la ventana estÃ¡ abierta
+            // Actualizar rango mientras la ventana esta abierta
             if (_orbWindowOpen && !_orbWindowClosed)
             {
                 double atr14 = _atrM1.Value[0] / TickSize;
@@ -592,12 +592,12 @@ namespace NinjaTrader.NinjaScript.Strategies
                     _orbWindowOpen   = false;
                     _orbWindowClosed = true;
                     DrawOrbLevels();
-                    Print($"[ORB] Ventana cerrada â€" High:{_orbCalc.ORB_High:F2} " +
+                    Print($"[ORB] Ventana cerrada - High:{_orbCalc.ORB_High:F2} " +
                           $"Low:{_orbCalc.ORB_Low:F2} Range:{_orbCalc.ORB_Range}t Valid:{_orbCalc.IsRangeValid}");
                 }
             }
 
-            // â"€â"€ FASE 3: Trading activo â"€â"€
+            //  "  "  FASE 3: Trading activo  "  " 
             if (_orbWindowClosed && _orbCalc.IsRangeValid)
             {
                 _contextFilter.Evaluate(now, true,
@@ -609,7 +609,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 _contextFilter.UpdateVolumeRatio(_sessionVolume,
                     _avgDailyVolume > 0 ? _avgDailyVolume : _sessionVolume);
 
-                // Actualizar sesgo del dÃ­a usando M15
+                // Actualizar sesgo del dia usando M15
                 if (CurrentBars[2] > 0)
                     _contextFilter.UpdateDayBias(Closes[2][0]);
 
@@ -623,7 +623,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                         EvaluateEntry(now);
                 }
 
-                // â"€â"€ FASE 4: GestiÃ³n de posiciÃ³n abierta â"€â"€
+                //  "  "  FASE 4: Gesti  n de posici  n abierta  "  " 
                 if (Position.MarketPosition != MarketPosition.Flat)
                 {
                     ManageOpenPosition(now);
@@ -638,7 +638,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 }
             }
 
-            // â"€â"€ Cierre forzado a las 15:00 â"€â"€
+            //  "  "  Cierre forzado a las 15:00  "  " 
             if (tod >= ForceCloseTime && Position.MarketPosition != MarketPosition.Flat)
             {
                 Print("[ORB] Cierre forzado por tiempo (15:00 ET).");
@@ -649,7 +649,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             // Bloquear nuevas entradas a las 14:30
             if (tod >= TradingEndTime) _newPositionBlocked = true;
 
-            // Mover a breakeven a las 14:30 si hay posiciÃ³n abierta
+            // Mover a breakeven a las 14:30 si hay posici  n abierta
             if (tod >= TradingEndTime && Position.MarketPosition != MarketPosition.Flat && !_tp1Hit)
             {
                 SetBreakEven();
@@ -660,7 +660,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region =================== LÃ"GICA DE ENTRADA ===================
+        #region =================== LoGICA DE ENTRADA ===================
 
         private void EvaluateEntry(DateTime now)
         {
@@ -677,7 +677,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             bool tryShort = _orbCalc.HasShortSignal && !_orbCalc.ShortFakeout
                          && (CurrentBar - _orbCalc.ShortBreakoutBar) <= MaxBarsAfterBreakout;
 
-            // Sin reversal: la primera señal detectada bloquea la dirección contraria
+            // Sin reversal: la primera se al detectada bloquea la direcci n contraria
             if (!AllowReversalTrade)
             {
                 if (_orbCalc.HasLongSignal)  tryShort = false;
@@ -690,16 +690,16 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         private bool ConditionsMetForLong()
         {
-            // ConfirmaciÃ³n de ticks sobre ORB_High
+            // Confirmaci  n de ticks sobre ORB_High
             if (_orbCalc.BreakoutStrength < BreakoutConfirmTicks) return false;
 
-            // Fakeout anterior en esta direcciÃ³n
+            // Fakeout anterior en esta direcci  n
             if (_orbCalc.LongFakeout) return false;
 
             // Gap opuesto y no se permite
             if (_contextFilter.GapDirection == "DOWN" && !TradeAgainstGap) return false;
 
-            // Capa 1: direcciÃ³n bloqueada por rÃ©gimen
+            // Capa 1: direcci  n bloqueada por regimen
             if (_regimeResult?.AvoidDirections?.Contains("LONG") == true) return false;
 
             // Volumen y momentum en M5
@@ -707,7 +707,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (_rsiM5.Value[0] <= 50) return false;
             if (_macdM5.Diff[0] <= 0) return false;
 
-            // Sesgo contrario a la entrada â†’ reducir (no bloquear), ya manejado en contratos
+            // Sesgo contrario a la entrada   ' reducir (no bloquear), ya manejado en contratos
             return true;
         }
 
@@ -728,7 +728,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             // Construir payload para Capa 3
             var payload = BuildEntryPayload(isLong, now);
 
-            // Validar con IA (bloqueante) â€" solo en live/paper
+            // Validar con IA (bloqueante) - solo en live/paper
             EntrySignalValidation validation;
             if (EnableAIValidation && _aiOrch != null && State != State.Historical)
             {
@@ -738,7 +738,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 }
                 catch (Exception ex)
                 {
-                    Print($"[Entry] Error Capa 3: {ex.Message} â€" rechazando entrada.");
+                    Print($"[Entry] Error Capa 3: {ex.Message} - rechazando entrada.");
                     DrawRejectedSignal(isLong);
                     return;
                 }
@@ -747,7 +747,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                     || validation.Confidence < _sessionMinConfidence
                     || validation.FakeoutProbability > FakeoutMaxThreshold)
                 {
-                    Print($"[Entry] IA rechazÃ³: {validation.Reason} " +
+                    Print($"[Entry] IA rechaz  : {validation.Reason} " +
                           $"Conf:{validation.Confidence:F2} Fakeout:{validation.FakeoutProbability:F2}");
                     DrawRejectedSignal(isLong);
                     return;
@@ -765,7 +765,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 };
             }
 
-            // Calcular parÃ¡metros de riesgo
+            // Calcular parametros de riesgo
             double atr5Ticks = CurrentBars[1] > 0 ? _atrM5.Value[0] / TickSize : _orbCalc.ORB_Range;
 
             bool   outsideGlobex = _contextFilter.IsBreakoutOutsideGlobex(
@@ -782,7 +782,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             if (!tradeParams.IsValid || tradeParams.Contracts < 1)
             {
-                Print($"[Entry] ParÃ¡metros de riesgo invÃ¡lidos: {tradeParams.InvalidReason}");
+                Print($"[Entry] Parametros de riesgo invalidos: {tradeParams.InvalidReason}");
                 return;
             }
 
@@ -809,7 +809,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             _riskGuardTriggered  = false;
             _riskGuardLastAction = "";
 
-            // Enviar Ã³rdenes a NinjaTrader
+            // Enviar   rdenes a NinjaTrader
             if (isLong)
             {
                 EnterLong(tradeParams.Contracts, "ORB_LONG");
@@ -837,7 +837,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region =================== GESTIÃ"N DE POSICIÃ"N ABIERTA ===================
+        #region =================== GESTIoN DE POSICIoN ABIERTA ===================
 
         private void ManageOpenPosition(DateTime now)
         {
@@ -846,7 +846,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             bool isLong = Position.MarketPosition == MarketPosition.Long;
             double currentPrice = Close[0];
 
-            // Actualizar excursiones mÃ¡ximas
+            // Actualizar excursiones maximas
             double mfe = isLong ? (High[0] - Position.AveragePrice) / TickSize
                                 : (Position.AveragePrice - Low[0])  / TickSize;
             double mae = isLong ? (Position.AveragePrice - Low[0])  / TickSize
@@ -857,15 +857,15 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             _barsHeld = CurrentBar - _entryBar;
 
-            // Verificar si precio volviÃ³ al rango por 3 barras consecutivas (invalidaciÃ³n)
+            // Verificar si precio volvi   al rango por 3 barras consecutivas (invalidaci  n)
             if (_orbCalc.IsPriceInsideRange(currentPrice))
             {
-                // Contador de barras dentro del rango â€" simplificado con contador de barras consecutivas
-                // ImplementaciÃ³n conservadora: salir inmediatamente si estÃ¡ dentro del rango
-                // y el trade lleva mÃ¡s de 3 barras
+                // Contador de barras dentro del rango - simplificado con contador de barras consecutivas
+                // Implementaci  n conservadora: salir inmediatamente si esta dentro del rango
+                // y el trade lleva mas de 3 barras
                 if (_barsHeld > 3)
                 {
-                    Print("[Exit] Precio regresÃ³ al rango ORB â€" salida por invalidaciÃ³n.");
+                    Print("[Exit] Precio regres   al rango ORB - salida por invalidaci  n.");
                     ExitPosition(isLong, "RangeReturn");
                     return;
                 }
@@ -892,7 +892,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             double barMoveTicks = (High[1] - Low[1]) / TickSize;
             double atr5Ticks    = _atrM5.Value[0] / TickSize;
 
-            // Detectar condiciÃ³n anÃ³mala
+            // Detectar condici  n an  mala
             string trigger = null;
             double magnitude = 0;
 
@@ -903,7 +903,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
             else if (Volume[1] > 0 && CurrentBars[1] > 20)
             {
-                // Comparar con promedio de las Ãºltimas 20 barras M5
+                // Comparar con promedio de las   ltimas 20 barras M5
                 double avgVol = 0;
                 for (int i = 2; i < Math.Min(22, CurrentBars[1]); i++)
                     avgVol += Volumes[1][i];
@@ -916,9 +916,9 @@ namespace NinjaTrader.NinjaScript.Strategies
                 }
             }
 
-            if (trigger == null) return; // sin anomalÃ­a
+            if (trigger == null) return; // sin anomalia
 
-            Print($"[Capa4] AnomalÃ­a detectada: {trigger} (magnitud {magnitude:F1}x)");
+            Print($"[Capa4] Anomalia detectada: {trigger} (magnitud {magnitude:F1}x)");
 
             double pnlTicks = isLong
                 ? (Close[0] - Position.AveragePrice) / TickSize
@@ -1000,7 +1000,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             double price, int quantity, MarketPosition marketPosition,
             string orderId, DateTime time)
         {
-            // Detectar cierre de posiciÃ³n (posiciÃ³n llegÃ³ a plano)
+            // Detectar cierre de posici  n (posici  n lleg   a plano)
             if (Position.MarketPosition == MarketPosition.Flat && _activeTradeParams != null)
             {
                 double pnlUsd  = GetCumProfit() - _cumProfitAtEntry;
@@ -1178,7 +1178,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             {
                 _tp1Hit = true;
                 SetBreakEven();
-                Print("[TP1] Alcanzado â€" breakeven activado.");
+                Print("[TP1] Alcanzado - breakeven activado.");
             }
             if (execution.Name?.Contains("T2") == true)
             {
@@ -1194,20 +1194,20 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region =================== INICIALIZACIÃ"N Y HELPERS ===================
+        #region =================== INICIALIZACIoN Y HELPERS ===================
 
         private void InitializePreMarket()
         {
             _sessionInitialized = true;
 
-            // Calcular cierre del dÃ­a previo (barra de ayer)
+            // Calcular cierre del dia previo (barra de ayer)
             if (CurrentBar > 1)
                 _contextFilter.SetPrevDayClose(Closes[0][1]);
 
-            // Calcular Globex (High/Low desde las 18:00 ET del dÃ­a previo)
-            // Simplificado: usar el High/Low de las Ãºltimas 24 barras M1 antes de 09:30
+            // Calcular Globex (High/Low desde las 18:00 ET del dia previo)
+            // Simplificado: usar el High/Low de las   ltimas 24 barras M1 antes de 09:30
             double globHigh = double.MinValue, globLow = double.MaxValue;
-            int lookback = Math.Min(CurrentBar, 8 * 60); // hasta 8 horas atrÃ¡s
+            int lookback = Math.Min(CurrentBar, 8 * 60); // hasta 8 horas atras
             for (int i = 1; i <= lookback; i++)
             {
                 if (High[i] > globHigh) globHigh = High[i];
@@ -1216,7 +1216,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (globHigh > double.MinValue)
                 _contextFilter.UpdateGlobex(globHigh, globLow);
 
-            // Volumen promedio del dÃ­a (estimaciÃ³n con el volumen de ayer)
+            // Volumen promedio del dia (estimaci  n con el volumen de ayer)
             if (_avgDailyVolume == 0 && CurrentBar > 390)
             {
                 double vol = 0;
@@ -1224,7 +1224,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 _avgDailyVolume = vol;
             }
 
-            Print($"[PreMarket] Inicializado â€" Globex High:{_contextFilter.GlobexHigh:F2} " +
+            Print($"[PreMarket] Inicializado - Globex High:{_contextFilter.GlobexHigh:F2} " +
                   $"Low:{_contextFilter.GlobexLow:F2}");
         }
 
@@ -1303,7 +1303,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         private bool IsHolidayEve(DateTime dt)
         {
-            // Festivos USA comunes â€" vÃ­spera = dÃ­a hÃ¡bil previo al festivo
+            // Festivos USA comunes - vispera = dia habil previo al festivo
             var holidays = new[] {
                 new DateTime(dt.Year,  1,  1), // New Year
                 new DateTime(dt.Year,  7,  4), // Independence Day
@@ -1340,7 +1340,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             return SystemPerformance.AllTrades.TradesPerformance.Currency.CumProfit;
         }
 
-        #region =================== VISUALIZACIÃ"N ===================
+        #region =================== VISUALIZACIoN ===================
 
         private void DrawOrbLevels()
         {
@@ -1353,7 +1353,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             Draw.HorizontalLine(this, "ORB_Mid_Line", _orbCalc.ORB_Mid,
                 Brushes.Gray, DashStyleHelper.Dash, 1);
 
-            // RectÃ¡ngulo sombreado del rango
+            // Rectangulo sombreado del rango
             int startBar = Math.Max(0, CurrentBar - (ORBWindowMinutes + 5));
             Draw.Rectangle(this, "ORB_Zone", true, startBar, _orbCalc.ORB_High,
                 0, _orbCalc.ORB_Low, Brushes.LightBlue, Brushes.Transparent, 30);
@@ -1371,7 +1371,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         private void DrawRejectedSignal(bool isLong)
         {
             string tag = $"Rejected_{CurrentBar}";
-            Draw.Text(this, tag, "âœ•", 0, isLong
+            Draw.Text(this, tag, "   ", 0, isLong
                 ? Low[0]  - TickSize * 5
                 : High[0] + TickSize * 5, Brushes.Gray);
         }
@@ -1387,7 +1387,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             double wr7d     = _journal.GetSummary(7).WinRate7d;
 
             string line1 = $"ORB | Range:{_orbCalc.ORB_Range:F0}t | Gap:{_contextFilter.GapPct:F2}% {_contextFilter.GapDirection} | Vol:{_contextFilter.VolumeRatio:F2}x";
-            string line2 = $"RÃ©gimen: [{regime}, conv {conv:F2}] | RiesgoHoy: [{maxRisk * 100:F0}%]";
+            string line2 = $"Regimen: [{regime}, conv {conv:F2}] | RiesgoHoy: [{maxRisk * 100:F0}%]";
             string line3 = $"Aprendizaje: [WR7d {wr7d * 100:F0}%] | Conf.ajustada: [{_sessionMinConfidence:F2}]";
             string line4 = $"Trades: [{_riskMgr.DailyTradeCount}/{MaxDailyTrades}] | ConsecLoss: [{_riskMgr.ConsecutiveLosses}/{MaxConsecutiveLosses}] | Trading: [{(_dailyTradingEnabled ? "ON" : "OFF")}]";
 

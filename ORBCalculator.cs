@@ -1,4 +1,4 @@
-// ORBCalculator.cs — Construcción y gestión del rango de apertura (ORB)
+// ORBCalculator.cs - Construcci n y gesti n del rango de apertura (ORB)
 // Parte del sistema IAOpenRange para NinjaTrader 8
 // Independiente: no depende de otros archivos del proyecto
 
@@ -10,17 +10,17 @@ using NinjaTrader.NinjaScript;
 namespace NinjaTrader.NinjaScript.Strategies
 {
     /// <summary>
-    /// Construye y gestiona el rango de apertura (Opening Range) de la sesión.
+    /// Construye y gestiona el rango de apertura (Opening Range) de la sesi n.
     /// Detecta breakouts, fakeouts y calcula la fuerza del rompimiento.
     /// </summary>
     public class ORBCalculator
     {
-        #region Propiedades públicas del rango
+        #region Propiedades p blicas del rango
 
-        /// <summary>Precio máximo del rango de apertura.</summary>
+        /// <summary>Precio m ximo del rango de apertura.</summary>
         public double ORB_High { get; private set; }
 
-        /// <summary>Precio mínimo del rango de apertura.</summary>
+        /// <summary>Precio m nimo del rango de apertura.</summary>
         public double ORB_Low { get; private set; }
 
         /// <summary>Amplitud del rango en ticks.</summary>
@@ -29,40 +29,40 @@ namespace NinjaTrader.NinjaScript.Strategies
         /// <summary>Punto medio del rango de apertura.</summary>
         public double ORB_Mid { get; private set; }
 
-        /// <summary>True mientras la ventana ORB está abierta y actualizando.</summary>
+        /// <summary>True mientras la ventana ORB est  abierta y actualizando.</summary>
         public bool IsRangeBuilding { get; private set; }
 
         /// <summary>True una vez cerrada la ventana ORB y rango fijado.</summary>
         public bool IsRangeComplete { get; private set; }
 
-        /// <summary>True si el rango cumple los criterios mínimos/máximos de amplitud.</summary>
+        /// <summary>True si el rango cumple los criterios m nimos/m ximos de amplitud.</summary>
         public bool IsRangeValid { get; private set; }
 
-        /// <summary>True si se generó señal de compra (cierre sobre ORB_High).</summary>
+        /// <summary>True si se gener  se al de compra (cierre sobre ORB_High).</summary>
         public bool HasLongSignal { get; private set; }
 
-        /// <summary>True si se generó señal de venta (cierre bajo ORB_Low).</summary>
+        /// <summary>True si se gener  se al de venta (cierre bajo ORB_Low).</summary>
         public bool HasShortSignal { get; private set; }
 
-        /// <summary>Número de barra M1 en que se confirmó el breakout alcista.</summary>
+        /// <summary>N mero de barra M1 en que se confirm  el breakout alcista.</summary>
         public int LongBreakoutBar { get; private set; }
 
-        /// <summary>Número de barra M1 en que se confirmó el breakout bajista.</summary>
+        /// <summary>N mero de barra M1 en que se confirm  el breakout bajista.</summary>
         public int ShortBreakoutBar { get; private set; }
 
         /// <summary>Distancia en ticks desde el nivel roto al cierre de la barra de breakout.</summary>
         public double BreakoutStrength { get; private set; }
 
-        /// <summary>True si el breakout alcista resultó ser un fakeout.</summary>
+        /// <summary>True si el breakout alcista result  ser un fakeout.</summary>
         public bool LongFakeout { get; private set; }
 
-        /// <summary>True si el breakout bajista resultó ser un fakeout.</summary>
+        /// <summary>True si el breakout bajista result  ser un fakeout.</summary>
         public bool ShortFakeout { get; private set; }
 
         /// <summary>Precio de cierre de la barra de breakout.</summary>
         public double BreakoutBarClose { get; private set; }
 
-        /// <summary>Dirección del último breakout detectado ("LONG", "SHORT" o "NONE").</summary>
+        /// <summary>Direcci n del  ltimo breakout detectado ("LONG", "SHORT" o "NONE").</summary>
         public string LastBreakoutDirection { get; private set; }
 
         #endregion
@@ -77,13 +77,13 @@ namespace NinjaTrader.NinjaScript.Strategies
         private int    _currentBarIndex;
         private double _dailyAtr14;
 
-        // Seguimiento para detección de fakeout
+        // Seguimiento para detecci n de fakeout
         private int    _longBreakoutCheckBar;
         private int    _shortBreakoutCheckBar;
         private bool   _longFakeoutChecked;
         private bool   _shortFakeoutChecked;
 
-        // Acción de log (referencia a NinjaScript Print)
+        // Acci n de log (referencia a NinjaScript Print)
         private readonly Action<string> _log;
 
         #endregion
@@ -91,12 +91,12 @@ namespace NinjaTrader.NinjaScript.Strategies
         #region Constructor
 
         /// <summary>
-        /// Inicializa el calculador de ORB con los parámetros del instrumento.
+        /// Inicializa el calculador de ORB con los par metros del instrumento.
         /// </summary>
-        /// <param name="tickSize">Tamaño del tick del instrumento (ej. 0.25 para ES).</param>
-        /// <param name="minRangeTicks">Amplitud mínima válida del rango en ticks.</param>
-        /// <param name="maxRangeTicks">Amplitud máxima válida del rango en ticks.</param>
-        /// <param name="maxRangeVsAtrMultiplier">Máx ratio rango/ATR (default 1.5).</param>
+        /// <param name="tickSize">Tama o del tick del instrumento (ej. 0.25 para ES).</param>
+        /// <param name="minRangeTicks">Amplitud m nima v lida del rango en ticks.</param>
+        /// <param name="maxRangeTicks">Amplitud m xima v lida del rango en ticks.</param>
+        /// <param name="maxRangeVsAtrMultiplier">M x ratio rango/ATR (default 1.5).</param>
         /// <param name="log">Delegado para logging (Strategy.Print).</param>
         public ORBCalculator(double tickSize, int minRangeTicks, int maxRangeTicks,
                              double maxRangeVsAtrMultiplier, Action<string> log)
@@ -111,10 +111,10 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region Métodos públicos
+        #region M todos p blicos
 
         /// <summary>
-        /// Resetea todos los valores al inicio de una nueva sesión.
+        /// Resetea todos los valores al inicio de una nueva sesi n.
         /// Llamar desde OnSessionStart() en la estrategia principal.
         /// </summary>
         public void Reset()
@@ -140,29 +140,29 @@ namespace NinjaTrader.NinjaScript.Strategies
             _longFakeoutChecked   = false;
             _shortFakeoutChecked  = false;
             _dailyAtr14           = 0;
-            _log("[ORBCalc] Rango reseteado para nueva sesión.");
+            _log("[ORBCalc] Rango reseteado para nueva sesi n.");
         }
 
         /// <summary>
-        /// Inicia la construcción del rango al abrirse la ventana ORB (09:30 ET).
+        /// Inicia la construcci n del rango al abrirse la ventana ORB (09:30 ET).
         /// </summary>
         public void StartBuilding()
         {
             IsRangeBuilding = true;
             ORB_High        = 0;
             ORB_Low         = double.MaxValue;
-            _log("[ORBCalc] Inicio de construcción del rango ORB.");
+            _log("[ORBCalc] Inicio de construcci n del rango ORB.");
         }
 
         /// <summary>
         /// Actualiza el rango con cada barra de M1 durante la ventana ORB,
-        /// y detecta breakouts una vez que el rango está completo.
+        /// y detecta breakouts una vez que el rango est  completo.
         /// </summary>
         /// <param name="high">High de la barra actual M1.</param>
         /// <param name="low">Low de la barra actual M1.</param>
         /// <param name="close">Cierre de la barra actual M1.</param>
-        /// <param name="barIndex">Índice de barra actual (CurrentBar).</param>
-        /// <param name="dailyAtr14">ATR(14) en ticks del día previo, para validación.</param>
+        /// <param name="barIndex"> ndice de barra actual (CurrentBar).</param>
+        /// <param name="dailyAtr14">ATR(14) en ticks del d a previo, para validaci n.</param>
         public void Update(double high, double low, double close, int barIndex, double dailyAtr14)
         {
             _currentBarIndex = barIndex;
@@ -186,7 +186,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 BreakoutBarClose      = close;
                 LastBreakoutDirection = "LONG";
                 BreakoutStrength      = Math.Round((close - ORB_High) / _tickSize, 1);
-                _log($"[ORBCalc] BREAKOUT LONG detectado — cierre {close:F2}, fuerza {BreakoutStrength} ticks.");
+                _log($"[ORBCalc] BREAKOUT LONG detectado - cierre {close:F2}, fuerza {BreakoutStrength} ticks.");
             }
 
             // Detectar breakout SHORT: primera barra que cierra bajo ORB_Low
@@ -197,7 +197,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 BreakoutBarClose      = close;
                 LastBreakoutDirection = "SHORT";
                 BreakoutStrength      = Math.Round((ORB_Low - close) / _tickSize, 1);
-                _log($"[ORBCalc] BREAKOUT SHORT detectado — cierre {close:F2}, fuerza {BreakoutStrength} ticks.");
+                _log($"[ORBCalc] BREAKOUT SHORT detectado - cierre {close:F2}, fuerza {BreakoutStrength} ticks.");
             }
         }
 
@@ -212,7 +212,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             if (ORB_Low >= ORB_High)
             {
-                _log("[ORBCalc] ERROR: ORB_Low >= ORB_High al cerrar ventana. Rango inválido.");
+                _log("[ORBCalc] ERROR: ORB_Low >= ORB_High al cerrar ventana. Rango inv lido.");
                 IsRangeValid = false;
                 return;
             }
@@ -222,21 +222,21 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             ValidateRange();
 
-            _log($"[ORBCalc] Ventana cerrada — High:{ORB_High:F2} Low:{ORB_Low:F2} " +
-                 $"Range:{ORB_Range}t Mid:{ORB_Mid:F2} Válido:{IsRangeValid}");
+            _log($"[ORBCalc] Ventana cerrada - High:{ORB_High:F2} Low:{ORB_Low:F2} " +
+                 $"Range:{ORB_Range}t Mid:{ORB_Mid:F2} V lido:{IsRangeValid}");
         }
 
         /// <summary>
-        /// Verifica si un breakout previo fue un fakeout (retroactivo, 3 barras después).
-        /// Llamar en cada barra M1 después del breakout.
+        /// Verifica si un breakout previo fue un fakeout (retroactivo, 3 barras despu s).
+        /// Llamar en cada barra M1 despu s del breakout.
         /// </summary>
         /// <param name="close">Cierre de la barra actual.</param>
-        /// <param name="barIndex">Índice de barra actual.</param>
+        /// <param name="barIndex"> ndice de barra actual.</param>
         public void CheckFakeout(double close, int barIndex)
         {
             if (!IsRangeComplete) return;
 
-            // Verificar fakeout LONG: 3 barras después del breakout, precio volvió bajo ORB_High
+            // Verificar fakeout LONG: 3 barras despu s del breakout, precio volvi  bajo ORB_High
             if (HasLongSignal && !LongFakeout && !_longFakeoutChecked
                 && LongBreakoutBar > 0 && barIndex >= LongBreakoutBar + 3)
             {
@@ -244,11 +244,11 @@ namespace NinjaTrader.NinjaScript.Strategies
                 if (close <= ORB_High)
                 {
                     LongFakeout = true;
-                    _log($"[ORBCalc] FAKEOUT LONG confirmado — precio {close:F2} volvió bajo ORB_High {ORB_High:F2}.");
+                    _log($"[ORBCalc] FAKEOUT LONG confirmado - precio {close:F2} volvi  bajo ORB_High {ORB_High:F2}.");
                 }
             }
 
-            // Verificar fakeout SHORT: 3 barras después del breakout, precio volvió sobre ORB_Low
+            // Verificar fakeout SHORT: 3 barras despu s del breakout, precio volvi  sobre ORB_Low
             if (HasShortSignal && !ShortFakeout && !_shortFakeoutChecked
                 && ShortBreakoutBar > 0 && barIndex >= ShortBreakoutBar + 3)
             {
@@ -256,13 +256,13 @@ namespace NinjaTrader.NinjaScript.Strategies
                 if (close >= ORB_Low)
                 {
                     ShortFakeout = true;
-                    _log($"[ORBCalc] FAKEOUT SHORT confirmado — precio {close:F2} volvió sobre ORB_Low {ORB_Low:F2}.");
+                    _log($"[ORBCalc] FAKEOUT SHORT confirmado - precio {close:F2} volvi  sobre ORB_Low {ORB_Low:F2}.");
                 }
             }
         }
 
         /// <summary>
-        /// Calcula el ratio entre el rango ORB y el ATR diario (0–100+ como porcentaje).
+        /// Calcula el ratio entre el rango ORB y el ATR diario (0-100+ como porcentaje).
         /// Usado en el payload de la Capa 3 como orb_range_vs_atr_pct.
         /// </summary>
         public double GetRangeVsAtrPct()
@@ -272,8 +272,8 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         /// <summary>
-        /// Devuelve true si el precio está actualmente dentro del rango ORB.
-        /// Usado para detectar retorno al rango (invalidación del setup en Sección 9).
+        /// Devuelve true si el precio est  actualmente dentro del rango ORB.
+        /// Usado para detectar retorno al rango (invalidaci n del setup en Secci n 9).
         /// </summary>
         public bool IsPriceInsideRange(double price)
         {
@@ -282,32 +282,32 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region Métodos privados
+        #region M todos privados
 
         /// <summary>
-        /// Valida que el rango cumple los criterios de amplitud mínima, máxima
+        /// Valida que el rango cumple los criterios de amplitud m nima, m xima
         /// y que no sea >= 1.5x el ATR(14) diario previo.
         /// </summary>
         private void ValidateRange()
         {
             if (ORB_Range < _minRangeTicks)
             {
-                _log($"[ORBCalc] Rango inválido: {ORB_Range}t < mínimo {_minRangeTicks}t.");
+                _log($"[ORBCalc] Rango inv lido: {ORB_Range}t < m nimo {_minRangeTicks}t.");
                 IsRangeValid = false;
                 return;
             }
 
             if (ORB_Range > _maxRangeTicks)
             {
-                _log($"[ORBCalc] Rango inválido: {ORB_Range}t > máximo {_maxRangeTicks}t.");
+                _log($"[ORBCalc] Rango inv lido: {ORB_Range}t > m ximo {_maxRangeTicks}t.");
                 IsRangeValid = false;
                 return;
             }
 
-            // Verificar ratio vs ATR solo si ATR está disponible
+            // Verificar ratio vs ATR solo si ATR est  disponible
             if (_dailyAtr14 > 0 && ORB_Range >= _dailyAtr14 * _maxRangeVsAtrMultiplier)
             {
-                _log($"[ORBCalc] Rango inválido: {ORB_Range}t >= {_maxRangeVsAtrMultiplier}x ATR ({_dailyAtr14}t).");
+                _log($"[ORBCalc] Rango inv lido: {ORB_Range}t >= {_maxRangeVsAtrMultiplier}x ATR ({_dailyAtr14}t).");
                 IsRangeValid = false;
                 return;
             }
