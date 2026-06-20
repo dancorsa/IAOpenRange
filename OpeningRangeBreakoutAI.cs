@@ -950,7 +950,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (!action.IsValid) return;
 
             _riskGuardTriggered  = true;
-            _riskGuardLastAction = action.Action ?? “”;
+            if (action.Action != null) _riskGuardLastAction = action.Action;
 
             if (action.Action == “close_immediately”)
             {
