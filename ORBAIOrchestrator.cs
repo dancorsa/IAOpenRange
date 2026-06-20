@@ -1,4 +1,4 @@
-﻿// ORBAIOrchestrator.cs â€” Orquestador de las 5 capas de IA del sistema ORB
+﻿// ORBAIOrchestrator.cs â€" Orquestador de las 5 capas de IA del sistema ORB
 // Parte del sistema IAOpenRange para NinjaTrader 8
 // Proveedor configurable: Claude (Anthropic) u OpenAI
 
@@ -371,7 +371,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 _http.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
             }
 
-            _log($"[AI] Orquestador inicializado â€” Proveedor:{_provider} Modelo:{GetModelName()}");
+            _log($"[AI] Orquestador inicializado â€" Proveedor:{_provider} Modelo:{GetModelName()}");
         }
 
         public void Dispose()
@@ -385,7 +385,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 1 â€” AnÃ¡lisis de rÃ©gimen diario
+        #region CAPA 1 â€" AnÃ¡lisis de rÃ©gimen diario
 
         /// <summary>
         /// Analiza el rÃ©gimen del dÃ­a (tendencia/rango/alta volatilidad) antes de operar.
@@ -471,7 +471,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 2 â€” Aprendizaje continuo
+        #region CAPA 2 â€" Aprendizaje continuo
 
         /// <summary>
         /// Analiza los Ãºltimos N trades para ajustar el umbral de confianza mÃ­nimo del dÃ­a.
@@ -576,25 +576,25 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 3 â€” ValidaciÃ³n de entrada (bloqueante)
+        #region CAPA 3 â€" ValidaciÃ³n de entrada (bloqueante)
 
         /// <summary>
         /// Valida si una seÃ±al de breakout es genuina o probable fakeout.
-        /// Llamada BLOQUEANTE â€” condiciona la decisiÃ³n de entrada.
+        /// Llamada BLOQUEANTE â€" condiciona la decisiÃ³n de entrada.
         /// </summary>
         public async Task<EntrySignalValidation> ValidateEntryAsync(ORBSignalPayload payload)
         {
             var fallback = new EntrySignalValidation
             {
                 Approve = false, Confidence = 0.0,
-                Reason = "API no disponible â€” entrada rechazada por seguridad.",
+                Reason = "API no disponible â€" entrada rechazada por seguridad.",
                 RiskAdjustment = 1.0, FakeoutProbability = 1.0, IsValid = false
             };
 
             if (_provider == ORBAIProvider.Disabled)
                 return new EntrySignalValidation { Approve = true, Confidence = 0.70,
                     RiskAdjustment = 1.0, FakeoutProbability = 0.30, IsValid = true,
-                    Reason = "IA deshabilitada â€” aprobaciÃ³n automÃ¡tica." };
+                    Reason = "IA deshabilitada â€" aprobaciÃ³n automÃ¡tica." };
 
             string systemPrompt =
                 "Eres un analista cuantitativo especializado en estrategias de Opening Range Breakout " +
@@ -608,7 +608,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 "  \"risk_adjustment\": 1.0,\n" +
                 "  \"fakeout_probability\": 0.0\n" +
                 "}\n\n" +
-                "APROBACIÃ“N: orb_range_vs_atr_pct 30%-120%, breakout_confirm_ticks >= 2, " +
+                "APROBACIÃ"N: orb_range_vs_atr_pct 30%-120%, breakout_confirm_ticks >= 2, " +
                 "volume_ratio >= 1.20, breakout_is_outside_globex = true, rsi_m5 alineado, " +
                 "gap alineado o flat, clearance_ticks >= 8, risk_reward_t1 >= 1.5, " +
                 "daily_regime = trending o favorable.\n" +
@@ -686,7 +686,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 4 â€” Guardia de riesgo sistÃ©mico (bloqueante)
+        #region CAPA 4 â€" Guardia de riesgo sistÃ©mico (bloqueante)
 
         /// <summary>
         /// EvalÃºa si una condiciÃ³n de mercado anÃ³mala requiere ajuste de stop o cierre.
@@ -697,7 +697,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             var fallback = new RiskGuardAction
             {
                 Action = "hold", Urgency = "low",
-                Reasoning = "API no disponible â€” mantener posiciÃ³n.", IsValid = false
+                Reasoning = "API no disponible â€" mantener posiciÃ³n.", IsValid = false
             };
 
             if (_provider == ORBAIProvider.Disabled) return fallback;
@@ -763,11 +763,11 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 5 â€” AnÃ¡lisis post-trade (asÃ­ncrono, fire-and-forget)
+        #region CAPA 5 â€" AnÃ¡lisis post-trade (asÃ­ncrono, fire-and-forget)
 
         /// <summary>
         /// Analiza un trade cerrado para extraer lecciones y alimentar la Capa 2.
-        /// Llamada ASÃNCRONA NO BLOQUEANTE â€” corre en background.
+        /// Llamada ASÃNCRONA NO BLOQUEANTE â€" corre en background.
         /// </summary>
         public async Task<PostTradeAnalysis> AnalyzeClosedTradeAsync(ClosedTradePayload payload)
         {

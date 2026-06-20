@@ -1,4 +1,4 @@
-﻿// ORBTradeJournal.cs â€” Historial de trades para aprendizaje continuo (Capa IA #2)
+﻿// ORBTradeJournal.cs â€" Historial de trades para aprendizaje continuo (Capa IA #2)
 // Parte del sistema IAOpenRange para NinjaTrader 8
 
 #region Usings
@@ -377,7 +377,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
             catch
             {
-                return null; // lÃ­nea corrupta â€” ignorar
+                return null; // lÃ­nea corrupta â€" ignorar
             }
         }
 

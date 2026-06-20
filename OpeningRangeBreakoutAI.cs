@@ -1,4 +1,4 @@
-﻿// OpeningRangeBreakoutAI.cs â€” Estrategia principal ORB con IA multicapa
+﻿// OpeningRangeBreakoutAI.cs â€" Estrategia principal ORB con IA multicapa
 // NinjaTrader 8 | NinjaScript | .NET 4.8 | C# 7.x
 // Integra: ORBCalculator, ORBContextFilter, ORBTradeJournal, ORBAIOrchestrator, ORBRiskManager
 
@@ -450,7 +450,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region =================== EVENTOS DE SESIÃ“N ===================
+        #region =================== EVENTOS DE SESIÃ"N ===================
 
         private void ResetSessionState()
         {
@@ -517,7 +517,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                         && !_regimeResult.FavorableForOrb && _regimeResult.Conviction >= 0.70)
                     {
                         _dailyTradingEnabled = false;
-                        Print($"[Capa1] Trading DESHABILITADO â€” rÃ©gimen: {_regimeResult.RegimeReason}");
+                        Print($"[Capa1] Trading DESHABILITADO â€" rÃ©gimen: {_regimeResult.RegimeReason}");
                     }
 
                     if (_regimeResult.IsValid)
@@ -555,13 +555,13 @@ namespace NinjaTrader.NinjaScript.Strategies
             var tod = now.TimeOfDay;
             UpdateSessionVwap();
 
-            // â”€â”€ FASE 1: Pre-market â€” calcular Globex y gap â”€â”€
+            // â"€â"€ FASE 1: Pre-market â€" calcular Globex y gap â"€â"€
             if (!_sessionInitialized && tod >= new TimeSpan(8, 0, 0) && tod < new TimeSpan(9, 30, 0))
             {
                 InitializePreMarket();
             }
 
-            // â”€â”€ FASE 2: Inicio ventana ORB a las 09:30 â”€â”€
+            // â"€â"€ FASE 2: Inicio ventana ORB a las 09:30 â"€â"€
             if (tod >= new TimeSpan(9, 30, 0) && !_orbWindowOpen && !_orbWindowClosed)
             {
                 _orbCalc.StartBuilding();
@@ -569,7 +569,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
                 // Calcular gap de apertura con el primer precio del dÃ­a
                 _contextFilter.CalculateGap(Open[0]);
-                Print($"[ORB] Ventana abierta â€” Gap: {_contextFilter.GapPct:F2}% {_contextFilter.GapDirection}");
+                Print($"[ORB] Ventana abierta â€" Gap: {_contextFilter.GapPct:F2}% {_contextFilter.GapDirection}");
             }
 
             // Actualizar rango mientras la ventana estÃ¡ abierta
@@ -592,12 +592,12 @@ namespace NinjaTrader.NinjaScript.Strategies
                     _orbWindowOpen   = false;
                     _orbWindowClosed = true;
                     DrawOrbLevels();
-                    Print($"[ORB] Ventana cerrada â€” High:{_orbCalc.ORB_High:F2} " +
+                    Print($"[ORB] Ventana cerrada â€" High:{_orbCalc.ORB_High:F2} " +
                           $"Low:{_orbCalc.ORB_Low:F2} Range:{_orbCalc.ORB_Range}t Valid:{_orbCalc.IsRangeValid}");
                 }
             }
 
-            // â”€â”€ FASE 3: Trading activo â”€â”€
+            // â"€â"€ FASE 3: Trading activo â"€â"€
             if (_orbWindowClosed && _orbCalc.IsRangeValid)
             {
                 _contextFilter.Evaluate(now, true,
@@ -623,7 +623,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                         EvaluateEntry(now);
                 }
 
-                // â”€â”€ FASE 4: GestiÃ³n de posiciÃ³n abierta â”€â”€
+                // â"€â"€ FASE 4: GestiÃ³n de posiciÃ³n abierta â"€â"€
                 if (Position.MarketPosition != MarketPosition.Flat)
                 {
                     ManageOpenPosition(now);
@@ -638,7 +638,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 }
             }
 
-            // â”€â”€ Cierre forzado a las 15:00 â”€â”€
+            // â"€â"€ Cierre forzado a las 15:00 â"€â"€
             if (tod >= ForceCloseTime && Position.MarketPosition != MarketPosition.Flat)
             {
                 Print("[ORB] Cierre forzado por tiempo (15:00 ET).");
@@ -660,7 +660,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region =================== LÃ“GICA DE ENTRADA ===================
+        #region =================== LÃ"GICA DE ENTRADA ===================
 
         private void EvaluateEntry(DateTime now)
         {
@@ -728,7 +728,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             // Construir payload para Capa 3
             var payload = BuildEntryPayload(isLong, now);
 
-            // Validar con IA (bloqueante) â€” solo en live/paper
+            // Validar con IA (bloqueante) â€" solo en live/paper
             EntrySignalValidation validation;
             if (EnableAIValidation && _aiOrch != null && State != State.Historical)
             {
@@ -738,7 +738,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 }
                 catch (Exception ex)
                 {
-                    Print($"[Entry] Error Capa 3: {ex.Message} â€” rechazando entrada.");
+                    Print($"[Entry] Error Capa 3: {ex.Message} â€" rechazando entrada.");
                     DrawRejectedSignal(isLong);
                     return;
                 }
@@ -837,7 +837,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region =================== GESTIÃ“N DE POSICIÃ“N ABIERTA ===================
+        #region =================== GESTIÃ"N DE POSICIÃ"N ABIERTA ===================
 
         private void ManageOpenPosition(DateTime now)
         {
@@ -860,12 +860,12 @@ namespace NinjaTrader.NinjaScript.Strategies
             // Verificar si precio volviÃ³ al rango por 3 barras consecutivas (invalidaciÃ³n)
             if (_orbCalc.IsPriceInsideRange(currentPrice))
             {
-                // Contador de barras dentro del rango â€” simplificado con contador de barras consecutivas
+                // Contador de barras dentro del rango â€" simplificado con contador de barras consecutivas
                 // ImplementaciÃ³n conservadora: salir inmediatamente si estÃ¡ dentro del rango
                 // y el trade lleva mÃ¡s de 3 barras
                 if (_barsHeld > 3)
                 {
-                    Print("[Exit] Precio regresÃ³ al rango ORB â€” salida por invalidaciÃ³n.");
+                    Print("[Exit] Precio regresÃ³ al rango ORB â€" salida por invalidaciÃ³n.");
                     ExitPosition(isLong, "RangeReturn");
                     return;
                 }
@@ -952,13 +952,13 @@ namespace NinjaTrader.NinjaScript.Strategies
             _riskGuardTriggered  = true;
             if (action.Action != null) _riskGuardLastAction = action.Action;
 
-            bool isCloseAction  = action.Action == “close_immediately”;
-            bool isTightenAction = action.Action == “tighten_stop”;
+            bool isCloseAction  = action.Action == "close_immediately";
+            bool isTightenAction = action.Action == "tighten_stop";
 
             if (isCloseAction)
             {
-                Print(“[Capa4] CIERRE DE EMERGENCIA - “ + action.Reasoning);
-                ExitPosition(isLong, “RiskGuard_Emergency”);
+                Print("[Capa4] CIERRE DE EMERGENCIA - " + action.Reasoning);
+                ExitPosition(isLong, "RiskGuard_Emergency");
             }
             else if (isTightenAction && action.NewStopDistanceTicks.HasValue)
             {
@@ -967,12 +967,12 @@ namespace NinjaTrader.NinjaScript.Strategies
                     ? Close[0] - (newStopDist * TickSize)
                     : Close[0] + (newStopDist * TickSize);
 
-                Print(“[Capa4] Stop ajustado a “ + newStopPrice.ToString(“F2”) +
-                      “ (“ + newStopDist + “t) - “ + action.Reasoning);
+                Print("[Capa4] Stop ajustado a " + newStopPrice.ToString("F2") +
+                      " (" + newStopDist + "t) - " + action.Reasoning);
                 if (isLong)
-                    SetStopLoss(“ORB_LONG”, CalculationMode.Price, newStopPrice, false);
+                    SetStopLoss("ORB_LONG", CalculationMode.Price, newStopPrice, false);
                 else
-                    SetStopLoss(“ORB_SHORT”, CalculationMode.Price, newStopPrice, false);
+                    SetStopLoss("ORB_SHORT", CalculationMode.Price, newStopPrice, false);
             }
         }
 
@@ -1178,7 +1178,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             {
                 _tp1Hit = true;
                 SetBreakEven();
-                Print("[TP1] Alcanzado â€” breakeven activado.");
+                Print("[TP1] Alcanzado â€" breakeven activado.");
             }
             if (execution.Name?.Contains("T2") == true)
             {
@@ -1194,7 +1194,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region =================== INICIALIZACIÃ“N Y HELPERS ===================
+        #region =================== INICIALIZACIÃ"N Y HELPERS ===================
 
         private void InitializePreMarket()
         {
@@ -1224,7 +1224,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 _avgDailyVolume = vol;
             }
 
-            Print($"[PreMarket] Inicializado â€” Globex High:{_contextFilter.GlobexHigh:F2} " +
+            Print($"[PreMarket] Inicializado â€" Globex High:{_contextFilter.GlobexHigh:F2} " +
                   $"Low:{_contextFilter.GlobexLow:F2}");
         }
 
@@ -1303,7 +1303,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         private bool IsHolidayEve(DateTime dt)
         {
-            // Festivos USA comunes â€” vÃ­spera = dÃ­a hÃ¡bil previo al festivo
+            // Festivos USA comunes â€" vÃ­spera = dÃ­a hÃ¡bil previo al festivo
             var holidays = new[] {
                 new DateTime(dt.Year,  1,  1), // New Year
                 new DateTime(dt.Year,  7,  4), // Independence Day
@@ -1340,7 +1340,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             return SystemPerformance.AllTrades.TradesPerformance.Currency.CumProfit;
         }
 
-        #region =================== VISUALIZACIÃ“N ===================
+        #region =================== VISUALIZACIÃ"N ===================
 
         private void DrawOrbLevels()
         {
