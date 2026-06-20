@@ -191,7 +191,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         /// <summary>
-        /// Devuelve los   ltimos N trades para la Capa 2.
+        /// Devuelve los ultimos N trades para la Capa 2.
         /// </summary>
         public List<ORBTradeRecord> GetLast(int n)
         {
@@ -206,7 +206,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         /// <summary>
-        /// Calcula metricas de performance de los   ltimos N dias.
+        /// Calcula metricas de performance de los ultimos N dias.
         /// </summary>
         public ORBPerformanceSummary GetSummary(int days)
         {

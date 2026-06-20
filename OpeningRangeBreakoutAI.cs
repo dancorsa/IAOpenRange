@@ -44,7 +44,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty]
         [Range(1, 10)]
-        [Display(Name = "Ticks de confirmaci  n breakout", GroupName = "ORB Setup", Order = 4)]
+        [Display(Name = "Ticks de confirmacion breakout", GroupName = "ORB Setup", Order = 4)]
         public int BreakoutConfirmTicks { get; set; }
 
         [NinjaScriptProperty]
@@ -74,31 +74,31 @@ namespace NinjaTrader.NinjaScript.Strategies
         [Display(Name = "Permitir trade reversal", GroupName = "ORB Setup", Order = 10)]
         public bool AllowReversalTrade { get; set; }
 
-        // --- Categoria Sesi  n ---
+        // --- Categoria Sesion ---
         [NinjaScriptProperty]
-        [Display(Name = "Inicio de trading (ET)", GroupName = "Sesi  n", Order = 1)]
+        [Display(Name = "Inicio de trading (ET)", GroupName = "Sesion", Order = 1)]
         public TimeSpan TradingStartTime { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Fin de nuevas entradas (ET)", GroupName = "Sesi  n", Order = 2)]
+        [Display(Name = "Fin de nuevas entradas (ET)", GroupName = "Sesion", Order = 2)]
         public TimeSpan TradingEndTime { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Cierre forzado (ET)", GroupName = "Sesi  n", Order = 3)]
+        [Display(Name = "Cierre forzado (ET)", GroupName = "Sesion", Order = 3)]
         public TimeSpan ForceCloseTime { get; set; }
 
         [NinjaScriptProperty]
         [Range(0.05, 2.0)]
-        [Display(Name = "Umbral gap (%)", GroupName = "Sesi  n", Order = 4)]
+        [Display(Name = "Umbral gap (%)", GroupName = "Sesion", Order = 4)]
         public double GapThresholdPct { get; set; }
 
         [NinjaScriptProperty]
         [Range(0, 60)]
-        [Display(Name = "Bloquear N min antes de noticia", GroupName = "Sesi  n", Order = 5)]
+        [Display(Name = "Bloquear N min antes de noticia", GroupName = "Sesion", Order = 5)]
         public int BlockMinutesBeforeNews { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Horarios de noticias (HH:mm,HH:mm)", GroupName = "Sesi  n", Order = 6)]
+        [Display(Name = "Horarios de noticias (HH:mm,HH:mm)", GroupName = "Sesion", Order = 6)]
         public string HighImpactTimes { get; set; }
 
         // --- Categoria Risk Management ---
@@ -206,7 +206,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         public double FakeoutMaxThreshold { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Habilitar validaci  n IA (Capa 3)", GroupName = "AI Core (Capa 3)", Order = 6)]
+        [Display(Name = "Habilitar validacion IA (Capa 3)", GroupName = "AI Core (Capa 3)", Order = 6)]
         public bool EnableAIValidation { get; set; }
 
         // --- Categoria AI Advanced Layers ---
@@ -288,7 +288,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         private bool   _riskGuardTriggered  = false;
         private string _riskGuardLastAction = "";
 
-        // Seguimiento de volumen promedio (aproximaci  n 30 dias)
+        // Seguimiento de volumen promedio (aproximacion 30 dias)
         private double _avgDailyVolume = 0;
         private double _sessionVolume  = 0;
 
@@ -328,7 +328,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 ReEntryWaitBars      = 6;
                 AllowReversalTrade   = false;
 
-                // Sesi  n
+                // Sesion
                 TradingStartTime         = new TimeSpan(10, 0, 0);
                 TradingEndTime           = new TimeSpan(14, 30, 0);
                 ForceCloseTime           = new TimeSpan(15, 0, 0);
@@ -370,7 +370,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 EnablePostTradeAnalysis     = true;
                 JournalLookbackTrades       = 20;
 
-                // NT8: calcular PnL de posici  n
+                // NT8: calcular PnL de posicion
                 Calculate               = Calculate.OnBarClose;
                 IsExitOnSessionCloseStrategy = true;
                 ExitOnSessionCloseSeconds    = 30;
@@ -411,6 +411,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                     Print);
 
                 ConfigureRiskManager();
+                ValidateParameters();
 
                 // Inicializar orquestador de IA (solo en live/paper, no en backtest)
                 if (State != State.Historical)
@@ -424,6 +425,39 @@ namespace NinjaTrader.NinjaScript.Strategies
             {
                 _aiOrch?.Dispose();
             }
+        }
+
+        private void ValidateParameters()
+        {
+            // TP close percentages should sum to ~1.0
+            double tpSum = TP1_ClosePct + TP2_ClosePct + TP3_ClosePct;
+            if (Math.Abs(tpSum - 1.0) > 0.05)
+                Print("[Config] AVISO: TP1+TP2+TP3 = " + tpSum.ToString("F2") +
+                      " (deberia ser ~1.0). Ajustar en parametros.");
+
+            // TP multipliers must be strictly ascending
+            if (TP1_Multiplier >= TP2_Multiplier || TP2_Multiplier >= TP3_Multiplier)
+                Print("[Config] AVISO: TP multiplicadores deben ser crecientes: TP1=" +
+                      TP1_Multiplier + " TP2=" + TP2_Multiplier + " TP3=" + TP3_Multiplier);
+
+            // Trading window times must be coherent
+            if (TradingStartTime >= TradingEndTime || TradingEndTime >= ForceCloseTime)
+                Print("[Config] AVISO: Horarios de sesion invalidos - " +
+                      "TradingStart debe ser < TradingEnd < ForceClose.");
+
+            // API key check when AI is enabled
+            if (EnableAIValidation && AIProvider != ORBAIProvider.Disabled
+                && string.IsNullOrEmpty(AIApiKey))
+                Print("[Config] AVISO: IA habilitada pero API Key vacia. Se usara fallback sin IA.");
+
+            // MinStop sanity: should be less than ORB range
+            if (MinStopTicks >= MinRangeTicks)
+                Print("[Config] AVISO: MinStopTicks (" + MinStopTicks +
+                      ") >= MinRangeTicks (" + MinRangeTicks + "). Revisar config.");
+
+            Print("[Config] Parametros validados OK - TP sum=" + tpSum.ToString("F2") +
+                  " AI=" + AIProvider + " TPs=" + TP1_Multiplier + "/" +
+                  TP2_Multiplier + "/" + TP3_Multiplier);
         }
 
         private void ConfigureRiskManager()
@@ -528,13 +562,13 @@ namespace NinjaTrader.NinjaScript.Strategies
                         _sessionMinConfidence = _learningResult.AdjustedMinConfidence;
 
                     _panelNeedsUpdate = true;
-                    Print($"[Sesi  n] Regimen:{_regimeResult.Regime} | " +
+                    Print($"[Sesion] Regimen:{_regimeResult.Regime} | " +
                           $"MinConf ajustada:{_sessionMinConfidence:F2} | " +
                           $"TradingEnabled:{_dailyTradingEnabled}");
                 }
                 catch (Exception ex)
                 {
-                    Print($"[Sesi  n] ERROR en capas 1/2: {ex.Message}");
+                    Print($"[Sesion] ERROR en capas 1/2: {ex.Message}");
                 }
             });
         }
@@ -545,7 +579,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         protected override void OnBarUpdate()
         {
-            // Solo procesar la serie M1 (BarsInProgress == 0) para la l  gica principal
+            // Solo procesar la serie M1 (BarsInProgress == 0) para la logica principal
             if (BarsInProgress != 0) return;
             if (Bars.IsFirstBarOfSession)
                 ResetSessionState();
@@ -555,13 +589,13 @@ namespace NinjaTrader.NinjaScript.Strategies
             var tod = now.TimeOfDay;
             UpdateSessionVwap();
 
-            //  "  "  FASE 1: Pre-market - calcular Globex y gap  "  " 
+            // --- FASE 1: Pre-market ---
             if (!_sessionInitialized && tod >= new TimeSpan(8, 0, 0) && tod < new TimeSpan(9, 30, 0))
             {
                 InitializePreMarket();
             }
 
-            //  "  "  FASE 2: Inicio ventana ORB a las 09:30  "  " 
+            // --- FASE 2: Ventana ORB ---
             if (tod >= new TimeSpan(9, 30, 0) && !_orbWindowOpen && !_orbWindowClosed)
             {
                 _orbCalc.StartBuilding();
@@ -597,7 +631,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 }
             }
 
-            //  "  "  FASE 3: Trading activo  "  " 
+            // --- FASE 3: Trading activo ---
             if (_orbWindowClosed && _orbCalc.IsRangeValid)
             {
                 _contextFilter.Evaluate(now, true,
@@ -623,7 +657,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                         EvaluateEntry(now);
                 }
 
-                //  "  "  FASE 4: Gesti  n de posici  n abierta  "  " 
+                //  "  "  FASE 4: Gestion de posicion abierta  "  " 
                 if (Position.MarketPosition != MarketPosition.Flat)
                 {
                     ManageOpenPosition(now);
@@ -638,7 +672,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 }
             }
 
-            //  "  "  Cierre forzado a las 15:00  "  " 
+            // --- Cierre forzado 15:00 ---
             if (tod >= ForceCloseTime && Position.MarketPosition != MarketPosition.Flat)
             {
                 Print("[ORB] Cierre forzado por tiempo (15:00 ET).");
@@ -649,7 +683,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             // Bloquear nuevas entradas a las 14:30
             if (tod >= TradingEndTime) _newPositionBlocked = true;
 
-            // Mover a breakeven a las 14:30 si hay posici  n abierta
+            // Mover a breakeven a las 14:30 si hay posicion abierta
             if (tod >= TradingEndTime && Position.MarketPosition != MarketPosition.Flat && !_tp1Hit)
             {
                 SetBreakEven();
@@ -677,7 +711,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             bool tryShort = _orbCalc.HasShortSignal && !_orbCalc.ShortFakeout
                          && (CurrentBar - _orbCalc.ShortBreakoutBar) <= MaxBarsAfterBreakout;
 
-            // Sin reversal: la primera se al detectada bloquea la direcci n contraria
+            // Sin reversal: la primera se al detectada bloquea la direccion contraria
             if (!AllowReversalTrade)
             {
                 if (_orbCalc.HasLongSignal)  tryShort = false;
@@ -690,16 +724,16 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         private bool ConditionsMetForLong()
         {
-            // Confirmaci  n de ticks sobre ORB_High
+            // Confirmacion de ticks sobre ORB_High
             if (_orbCalc.BreakoutStrength < BreakoutConfirmTicks) return false;
 
-            // Fakeout anterior en esta direcci  n
+            // Fakeout anterior en esta direccion
             if (_orbCalc.LongFakeout) return false;
 
             // Gap opuesto y no se permite
             if (_contextFilter.GapDirection == "DOWN" && !TradeAgainstGap) return false;
 
-            // Capa 1: direcci  n bloqueada por regimen
+            // Capa 1: direccion bloqueada por regimen
             if (_regimeResult?.AvoidDirections?.Contains("LONG") == true) return false;
 
             // Volumen y momentum en M5
@@ -747,7 +781,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                     || validation.Confidence < _sessionMinConfidence
                     || validation.FakeoutProbability > FakeoutMaxThreshold)
                 {
-                    Print($"[Entry] IA rechaz  : {validation.Reason} " +
+                    Print($"[Entry] IA rechazo : {validation.Reason} " +
                           $"Conf:{validation.Confidence:F2} Fakeout:{validation.FakeoutProbability:F2}");
                     DrawRejectedSignal(isLong);
                     return;
@@ -809,7 +843,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             _riskGuardTriggered  = false;
             _riskGuardLastAction = "";
 
-            // Enviar   rdenes a NinjaTrader
+            // Enviarordenes a NinjaTrader
             if (isLong)
             {
                 EnterLong(tradeParams.Contracts, "ORB_LONG");
@@ -857,7 +891,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             _barsHeld = CurrentBar - _entryBar;
 
-            // Verificar si precio volvi   al rango por 3 barras consecutivas (invalidaci  n)
+            // Verificar si precio volvi   al rango por 3 barras consecutivas (invalidacion)
             if (_orbCalc.IsPriceInsideRange(currentPrice))
             {
                 // Contador de barras dentro del rango - simplificado con contador de barras consecutivas
@@ -865,7 +899,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 // y el trade lleva mas de 3 barras
                 if (_barsHeld > 3)
                 {
-                    Print("[Exit] Precio regres   al rango ORB - salida por invalidaci  n.");
+                    Print("[Exit] Precio regreso  al rango ORB - salida por invalidacion.");
                     ExitPosition(isLong, "RangeReturn");
                     return;
                 }
@@ -892,7 +926,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             double barMoveTicks = (High[1] - Low[1]) / TickSize;
             double atr5Ticks    = _atrM5.Value[0] / TickSize;
 
-            // Detectar condici  n an  mala
+            // Detectar condici  n anomala
             string trigger = null;
             double magnitude = 0;
 
@@ -903,7 +937,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
             else if (Volume[1] > 0 && CurrentBars[1] > 20)
             {
-                // Comparar con promedio de las   ltimas 20 barras M5
+                // Comparar con promedio de las ultimas 20 barras M5
                 double avgVol = 0;
                 for (int i = 2; i < Math.Min(22, CurrentBars[1]); i++)
                     avgVol += Volumes[1][i];
@@ -1000,7 +1034,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             double price, int quantity, MarketPosition marketPosition,
             string orderId, DateTime time)
         {
-            // Detectar cierre de posici  n (posici  n lleg   a plano)
+            // Detectar cierre de posicion (posicion lleg   a plano)
             if (Position.MarketPosition == MarketPosition.Flat && _activeTradeParams != null)
             {
                 double pnlUsd  = GetCumProfit() - _cumProfitAtEntry;
@@ -1205,7 +1239,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 _contextFilter.SetPrevDayClose(Closes[0][1]);
 
             // Calcular Globex (High/Low desde las 18:00 ET del dia previo)
-            // Simplificado: usar el High/Low de las   ltimas 24 barras M1 antes de 09:30
+            // Simplificado: usar el High/Low de las ultimas 24 barras M1 antes de 09:30
             double globHigh = double.MinValue, globLow = double.MaxValue;
             int lookback = Math.Min(CurrentBar, 8 * 60); // hasta 8 horas atras
             for (int i = 1; i <= lookback; i++)

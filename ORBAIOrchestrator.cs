@@ -405,7 +405,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 "Eres un analista de regimen de mercado para futuros del CME. " +
                 "Recibiras contexto pre-apertura y debes evaluar si las condiciones " +
                 "favorecen una estrategia de breakout (ORB) o si el mercado probablemente " +
-                "estara en rango sin convicci  n direccional.\n\n" +
+                "estara en rango sin conviccion direccional.\n\n" +
                 "Responde uNICAMENTE con JSON valido (sin texto adicional, sin markdown):\n" +
                 "{\n" +
                 "  \"regime\": \"trending | ranging | high_volatility | uncertain\",\n" +
@@ -416,9 +416,9 @@ namespace NinjaTrader.NinjaScript.Strategies
                 "  \"regime_reason\": \"string max 150 chars\"\n" +
                 "}\n\n" +
                 "Favorece ORB cuando: gap significativo presente, Globex range normal, " +
-                "dia no es viernes tarde ni vispera de festivo, sin Fed en las pr  ximas 2h. " +
+                "dia no es viernes tarde ni vispera de festivo, sin Fed en las proximas 2h. " +
                 "No favorece ORB cuando: gap_pct cercano a 0 con Globex muy amplio, " +
-                "m  ltiples earnings, viernes despues de mediodia.";
+                "multiples earnings, viernes despues de mediodia.";
 
             string userMsg = JsonSerializer.Serialize(new
             {
@@ -474,7 +474,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         #region CAPA 2 - Aprendizaje continuo
 
         /// <summary>
-        /// Analiza los   ltimos N trades para ajustar el umbral de confianza minimo del dia.
+        /// Analiza los ultimos N trades para ajustar el umbral de confianza minimo del dia.
         /// Llamar UNA VEZ en OnSessionStart(), en paralelo con la Capa 1.
         /// </summary>
         public async Task<LearningAdjustment> AnalyzeRecentPerformanceAsync(
@@ -493,7 +493,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             string systemPrompt =
                 "Eres un analista de performance para una estrategia de Opening Range Breakout. " +
-                "Recibiras los   ltimos 20 trades con sus condiciones y resultados. " +
+                "Recibiras los ultimos 20 trades con sus condiciones y resultados. " +
                 "Identifica patrones de exito y fracaso para ajustar el criterio de hoy.\n\n" +
                 "Responde uNICAMENTE con JSON valido:\n" +
                 "{\n" +
@@ -506,7 +506,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 "Si win_rate_20 > 0.65   ' puede bajar a 0.55-0.60. " +
                 "Identifica patrones de fracaso repetidos (gap opuesto, viernes, bajo volumen).";
 
-            // Serializar los   ltimos 20 trades de forma compacta
+            // Serializar los ultimos 20 trades de forma compacta
             var tradesJson = new List<object>();
             foreach (var t in last20Trades)
             {
@@ -576,11 +576,11 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         #endregion
 
-        #region CAPA 3 - Validaci  n de entrada (bloqueante)
+        #region CAPA 3 - Validacion de entrada (bloqueante)
 
         /// <summary>
         /// Valida si una senal de breakout es genuina o probable fakeout.
-        /// Llamada BLOQUEANTE - condiciona la decisi  n de entrada.
+        /// Llamada BLOQUEANTE - condiciona la decision de entrada.
         /// </summary>
         public async Task<EntrySignalValidation> ValidateEntryAsync(ORBSignalPayload payload)
         {
@@ -594,12 +594,12 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (_provider == ORBAIProvider.Disabled)
                 return new EntrySignalValidation { Approve = true, Confidence = 0.70,
                     RiskAdjustment = 1.0, FakeoutProbability = 0.30, IsValid = true,
-                    Reason = "IA deshabilitada - aprobaci  n automatica." };
+                    Reason = "IA deshabilitada - aprobacion automatica." };
 
             string systemPrompt =
                 "Eres un analista cuantitativo especializado en estrategias de Opening Range Breakout " +
                 "(ORB) en futuros del CME. Recibiras datos de una senal de breakout junto con el " +
-                "regimen del dia y patrones hist  ricos recientes. Determina si es breakout genuino.\n\n" +
+                "regimen del dia y patrones historicos recientes. Determina si es breakout genuino.\n\n" +
                 "Responde uNICAMENTE con JSON valido:\n" +
                 "{\n" +
                 "  \"approve\": true,\n" +
@@ -614,7 +614,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 "daily_regime = trending o favorable.\n" +
                 "RECHAZO: bars_since_breakout > 3, orb_range_vs_atr_pct > 150%, " +
                 "volume_ratio < 0.70, gap opuesto, clearance < 5, " +
-                "patr  n coincide con patterns_failing_today (-0.20 extra en confidence).\n" +
+                "patron coincide con patterns_failing_today (-0.20 extra en confidence).\n" +
                 "Usa session_min_confidence como umbral de referencia, no un valor fijo.";
 
             string userMsg = JsonSerializer.Serialize(new
@@ -673,7 +673,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 };
 
                 _log($"[AI-Capa3] Aprobado:{result.Approve} Conf:{result.Confidence:F2} " +
-                     $"Fakeout:{result.FakeoutProbability:F2} Raz  n:{result.Reason}");
+                     $"Fakeout:{result.FakeoutProbability:F2} Razon:{result.Reason}");
 
                 return result;
             }
@@ -689,22 +689,22 @@ namespace NinjaTrader.NinjaScript.Strategies
         #region CAPA 4 - Guardia de riesgo sistemico (bloqueante)
 
         /// <summary>
-        /// Eval  a si una condici  n de mercado an  mala requiere ajuste de stop o cierre.
-        /// Llamada BLOQUEANTE cuando hay posici  n abierta y se detecta anomalia.
+        /// Evalua si una condici  n de mercado anomala requiere ajuste de stop o cierre.
+        /// Llamada BLOQUEANTE cuando hay posicion abierta y se detecta anomalia.
         /// </summary>
         public async Task<RiskGuardAction> CheckSystemicRiskAsync(RiskGuardPayload payload)
         {
             var fallback = new RiskGuardAction
             {
                 Action = "hold", Urgency = "low",
-                Reasoning = "API no disponible - mantener posici  n.", IsValid = false
+                Reasoning = "API no disponible - mantener posicion.", IsValid = false
             };
 
             if (_provider == ORBAIProvider.Disabled) return fallback;
 
             string systemPrompt =
-                "Eres un sistema de guardia de riesgo para una posici  n abierta en futuros. " +
-                "Se detect   una condici  n de mercado an  mala. Eval  a si la posici  n debe " +
+                "Eres un sistema de guardia de riesgo para una posicion abierta en futuros. " +
+                "Se detecto  una condici  n de mercado anomala. Evalua si la posicion debe " +
                 "mantenerse, ajustarse o cerrarse inmediatamente.\n\n" +
                 "Responde uNICAMENTE con JSON valido:\n" +
                 "{\n" +
@@ -713,9 +713,9 @@ namespace NinjaTrader.NinjaScript.Strategies
                 "  \"new_stop_distance_ticks\": null,\n" +
                 "  \"reasoning\": \"string max 100 chars\"\n" +
                 "}\n\n" +
-                "close_immediately: trigger_magnitude > 3.0 Y posici  n va contra el movimiento. " +
-                "tighten_stop: movimiento a favor pero con riesgo de reversi  n violenta. " +
-                "hold: movimiento an  malo confirma la posici  n con bajo riesgo.";
+                "close_immediately: trigger_magnitude > 3.0 Y posicion va contra el movimiento. " +
+                "tighten_stop: movimiento a favor pero con riesgo de reversion violenta. " +
+                "hold: movimiento anomalo confirma la posicion con bajo riesgo.";
 
             string userMsg = JsonSerializer.Serialize(new
             {
@@ -749,8 +749,8 @@ namespace NinjaTrader.NinjaScript.Strategies
                     && stopProp.ValueKind != JsonValueKind.Null)
                     result.NewStopDistanceTicks = stopProp.GetDouble();
 
-                _log($"[AI-Capa4] Acci  n:{result.Action} Urgencia:{result.Urgency} " +
-                     $"NuevoStop:{result.NewStopDistanceTicks} Raz  n:{result.Reasoning}");
+                _log($"[AI-Capa4] Accion:{result.Action} Urgencia:{result.Urgency} " +
+                     $"NuevoStop:{result.NewStopDistanceTicks} Razon:{result.Reasoning}");
 
                 return result;
             }
@@ -780,8 +780,8 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             string systemPrompt =
                 "Eres un analista post-trade para una estrategia de Opening Range Breakout. " +
-                "Recibiras los detalles completos de un trade cerrado, incluyendo la predicci  n " +
-                "de la IA al entrar y lo que realmente ocurri  . Analiza la causa raiz.\n\n" +
+                "Recibiras los detalles completos de un trade cerrado, incluyendo la prediccion " +
+                "de la IA al entrar y lo que realmente ocurrio . Analiza la causa raiz.\n\n" +
                 "Responde uNICAMENTE con JSON valido:\n" +
                 "{\n" +
                 "  \"primary_failure_reason\": null,\n" +
@@ -790,8 +790,8 @@ namespace NinjaTrader.NinjaScript.Strategies
                 "  \"confidence_calibration_error\": 0.0,\n" +
                 "  \"lesson\": \"string max 150 chars\"\n" +
                 "}\n\n" +
-                "confidence_calibration_error: si confidence fue 0.85 y el trade perdi   = 0.7-0.8. " +
-                "Si confidence fue 0.55 y perdi   = 0.1-0.2. Si gan   = 0.0-0.1.";
+                "confidence_calibration_error: si confidence fue 0.85 y el trade perdio  = 0.7-0.8. " +
+                "Si confidence fue 0.55 y perdio  = 0.1-0.2. Si gano = 0.0-0.1.";
 
             var entrySnap = payload.EntryConditions;
             string userMsg = JsonSerializer.Serialize(new
@@ -900,33 +900,48 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             string url = _provider == ORBAIProvider.Claude ? CLAUDE_URL : OPENAI_URL;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-            var cts     = new CancellationTokenSource(_timeout);
+            HttpResponseMessage response = null;
+            string responseBody          = null;
+            const int maxRetries         = 1;
 
-            HttpResponseMessage response;
-            try
+            for (int attempt = 0; attempt <= maxRetries; attempt++)
             {
-                response = await _http.PostAsync(url, content, cts.Token);
-            }
-            catch (TaskCanceledException)
-            {
-                _log("[AI] Timeout en llamada a API.");
+                bool lastAttempt = (attempt == maxRetries);
+                try
+                {
+                    var httpContent = new StringContent(requestBody, Encoding.UTF8, "application/json");
+                    var cts2        = new CancellationTokenSource(_timeout);
+                    response = await _http.PostAsync(url, httpContent, cts2.Token);
+                    cts2.Dispose();
+                }
+                catch (TaskCanceledException)
+                {
+                    if (lastAttempt) { _log("[AI] Timeout."); return null; }
+                    _log("[AI] Timeout - reintentando...");
+                    await Task.Delay(600);
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    _log("[AI] Error HTTP: " + ex.Message);
+                    return null;
+                }
+
+                responseBody = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode) break;
+
+                int code = (int)response.StatusCode;
+                if (!lastAttempt && (code >= 500 || code == 429))
+                {
+                    _log("[AI] HTTP " + code + " - reintentando...");
+                    await Task.Delay(code == 429 ? 1500 : 600);
+                    continue;
+                }
+                _log("[AI] HTTP " + code + ": " + responseBody.Substring(0, Math.Min(200, responseBody.Length)));
                 return null;
             }
-            catch (Exception ex)
-            {
-                _log($"[AI] Error HTTP: {ex.Message}");
-                return null;
-            }
 
-            string responseBody = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
-            {
-                _log($"[AI] HTTP {(int)response.StatusCode}: {responseBody.Substring(0, Math.Min(200, responseBody.Length))}");
-                return null;
-            }
-
+            if (response == null || responseBody == null || !response.IsSuccessStatusCode) return null;
             return ExtractTextFromResponse(responseBody);
         }
 
