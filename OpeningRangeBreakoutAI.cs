@@ -952,23 +952,27 @@ namespace NinjaTrader.NinjaScript.Strategies
             _riskGuardTriggered  = true;
             if (action.Action != null) _riskGuardLastAction = action.Action;
 
-            if (action.Action == “close_immediately”)
+            bool isCloseAction  = action.Action == “close_immediately”;
+            bool isTightenAction = action.Action == “tighten_stop”;
+
+            if (isCloseAction)
             {
-                Print($”[Capa4] CIERRE DE EMERGENCIA â€” {action.Reasoning}”);
+                Print(“[Capa4] CIERRE DE EMERGENCIA - “ + action.Reasoning);
                 ExitPosition(isLong, “RiskGuard_Emergency”);
             }
-            else if (action.Action == "tighten_stop" && action.NewStopDistanceTicks.HasValue)
+            else if (isTightenAction && action.NewStopDistanceTicks.HasValue)
             {
                 double newStopDist = action.NewStopDistanceTicks.Value;
                 double newStopPrice = isLong
                     ? Close[0] - (newStopDist * TickSize)
                     : Close[0] + (newStopDist * TickSize);
 
-                Print($"[Capa4] Stop ajustado a {newStopPrice:F2} ({newStopDist}t) â€” {action.Reasoning}");
+                Print(“[Capa4] Stop ajustado a “ + newStopPrice.ToString(“F2”) +
+                      “ (“ + newStopDist + “t) - “ + action.Reasoning);
                 if (isLong)
-                    SetStopLoss("ORB_LONG", CalculationMode.Price, newStopPrice, false);
+                    SetStopLoss(“ORB_LONG”, CalculationMode.Price, newStopPrice, false);
                 else
-                    SetStopLoss("ORB_SHORT", CalculationMode.Price, newStopPrice, false);
+                    SetStopLoss(“ORB_SHORT”, CalculationMode.Price, newStopPrice, false);
             }
         }
 
