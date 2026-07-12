@@ -324,11 +324,11 @@ namespace NinjaTrader.NinjaScript.Strategies
 
                 // ORB Setup
                 ORBWindowMinutes     = 30;
-                MinRangeTicks        = 8;
-                MaxRangeTicks        = 60;
+                MinRangeTicks        = 12;
+                MaxRangeTicks        = 80;
                 BreakoutConfirmTicks = 2;
                 MaxBarsAfterBreakout = 3;
-                ClearanceZoneTicks   = 10;
+                ClearanceZoneTicks   = 12;
                 TradeAgainstGap      = false;
                 AllowReEntry         = true;
                 ReEntryWaitBars      = 6;
@@ -347,7 +347,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 MaxContracts         = 4;
                 StopRangeMultiplier  = 0.50;
                 StopATRMultiplier    = 1.2;
-                MinStopTicks         = 8;
+                MinStopTicks         = 10;
                 TrailingATRMultiplier= 1.0;
                 TP1_Multiplier       = 1.5;
                 TP2_Multiplier       = 2.5;
